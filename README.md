@@ -43,4 +43,5 @@ Ao concluir este treinamento, o colaborador deverá ser capaz de:
 - Manter uma atitude de desconfiança saudável diante de e-mails não solicitados, mesmo que pareçam vir de fontes confiáveis.
 - Aplicar as boas práticas aprendidas de forma consistente no dia a dia profissional.
 
-## [Mapa Conceitual](https://cmapscloud.ihmc.us:443/rid=22NYTVDD3-497PG1-MR5LVV)
+## Mapa Conceitual
+- [Clique Aqui](https://cmapscloud.ihmc.us:443/rid=22NYTVDD3-497PG1-MR5LVV)
