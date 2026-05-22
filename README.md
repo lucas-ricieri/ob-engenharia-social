@@ -43,8 +43,4 @@ Ao concluir este treinamento, o colaborador deverá ser capaz de:
 - Manter uma atitude de desconfiança saudável diante de e-mails não solicitados, mesmo que pareçam vir de fontes confiáveis.
 - Aplicar as boas práticas aprendidas de forma consistente no dia a dia profissional.
 
-## Como Utilizar
-
-1. Leia os módulos na ordem sugerida, cada um aprofunda um dos requisitos de aprendizagem listados acima.
-2. Pratique com os exemplos de e-mails na pasta `exemplos/`, tentando identificar os sinais de alerta antes de consultar o gabarito.
-3. Realize os exercícios de simulação para fixar o conteúdo.
+## [Mapa Conceitual](https://cmapscloud.ihmc.us:443/rid=22NYTVDD3-497PG1-MR5LVV)
