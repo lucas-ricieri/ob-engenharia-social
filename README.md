@@ -4,6 +4,14 @@ Objeto de aprendizagem voltado à capacitação de colaboradores corporativos pa
 
 ---
 
+# Integrantes:
+
+Artur Pigari Prata
+Lucas Ricieri Siquinelli Pereira
+Marlus Zabla Lipsuk
+
+---
+
 ## Público-Alvo
 
 Este treinamento é destinado a **colaboradores de empresas de todos os níveis hierárquicos** — desde equipes operacionais até gestores — que utilizam e-mail corporativo em sua rotina de trabalho. Não é necessário conhecimento técnico prévio em segurança da informação; o conteúdo foi elaborado para ser acessível a qualquer profissional, independentemente de sua área de atuação.
@@ -43,22 +51,8 @@ Ao concluir este treinamento, o colaborador deverá ser capaz de:
 
 ---
 
-## Estrutura do Repositório
-
-```
-├── modulos/             # Conteúdo didático organizado por tema
-├── exercicios/          # Atividades práticas e simulações
-├── exemplos/            # E-mails reais (anonimizados) e fictícios para análise
-├── assets/              # Imagens, diagramas e materiais de apoio
-└── README.md
-```
-
 ## Como Utilizar
 
 1. Leia os módulos na ordem sugerida — cada um aprofunda um dos requisitos de aprendizagem listados acima.
 2. Pratique com os exemplos de e-mails na pasta `exemplos/`, tentando identificar os sinais de alerta antes de consultar o gabarito.
 3. Realize os exercícios de simulação para fixar o conteúdo.
-
-## Licença
-
-Este projeto está licenciado sob a [MIT License](LICENSE).
