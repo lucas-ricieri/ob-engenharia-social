@@ -2,21 +2,15 @@
 
 Objeto de aprendizagem voltado à capacitação de colaboradores corporativos para reconhecer, analisar e reagir adequadamente a tentativas de engenharia social por e-mail.
 
----
-
 # Integrantes:
 
-Artur Pigari Prata
-Lucas Ricieri Siquinelli Pereira
-Marlus Zabla Lipsuk
-
----
+- Artur Pigari Prata
+- Lucas Ricieri Siquinelli Pereira
+- Marlus Zabla Lipsuk
 
 ## Público-Alvo
 
 Este treinamento é destinado a **colaboradores de empresas de todos os níveis hierárquicos** — desde equipes operacionais até gestores — que utilizam e-mail corporativo em sua rotina de trabalho. Não é necessário conhecimento técnico prévio em segurança da informação; o conteúdo foi elaborado para ser acessível a qualquer profissional, independentemente de sua área de atuação.
-
----
 
 ## Requisitos de Aprendizagem
 
@@ -48,8 +42,6 @@ Ao concluir este treinamento, o colaborador deverá ser capaz de:
 ### 6. Desenvolver uma Postura Preventiva Contínua
 - Manter uma atitude de desconfiança saudável diante de e-mails não solicitados, mesmo que pareçam vir de fontes confiáveis.
 - Aplicar as boas práticas aprendidas de forma consistente no dia a dia profissional.
-
----
 
 ## Como Utilizar
 
