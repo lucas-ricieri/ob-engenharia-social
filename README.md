@@ -10,7 +10,7 @@ Objeto de aprendizagem voltado à capacitação de colaboradores corporativos pa
 
 ## Público-Alvo
 
-Este treinamento é destinado a **colaboradores de empresas de todos os níveis hierárquicos** — desde equipes operacionais até gestores — que utilizam e-mail corporativo em sua rotina de trabalho. Não é necessário conhecimento técnico prévio em segurança da informação; o conteúdo foi elaborado para ser acessível a qualquer profissional, independentemente de sua área de atuação.
+Este treinamento é destinado a **colaboradores de empresas de todos os níveis hierárquicos**, desde equipes operacionais até gestores, que utilizam e-mail corporativo em sua rotina de trabalho. Não é necessário conhecimento técnico prévio em segurança da informação; o conteúdo foi elaborado para ser acessível a qualquer profissional, independentemente de sua área de atuação.
 
 ## Requisitos de Aprendizagem
 
@@ -45,6 +45,6 @@ Ao concluir este treinamento, o colaborador deverá ser capaz de:
 
 ## Como Utilizar
 
-1. Leia os módulos na ordem sugerida — cada um aprofunda um dos requisitos de aprendizagem listados acima.
+1. Leia os módulos na ordem sugerida, cada um aprofunda um dos requisitos de aprendizagem listados acima.
 2. Pratique com os exemplos de e-mails na pasta `exemplos/`, tentando identificar os sinais de alerta antes de consultar o gabarito.
 3. Realize os exercícios de simulação para fixar o conteúdo.
