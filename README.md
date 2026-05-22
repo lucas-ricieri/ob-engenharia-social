@@ -34,12 +34,7 @@ Ao concluir este treinamento, o colaborador deverá ser capaz de:
 - Verificar se a mensagem recebida era esperada e se está dentro do contexto normal de trabalho.
 - Utilizar canais seguros (telefone, chat corporativo, conversa presencial) para essa validação, e nunca responder diretamente ao e-mail suspeito.
 
-### 5. Reagir Adequadamente a Tentativas de Ataque
-- Saber como reportar um e-mail suspeito seguindo o procedimento definido pela empresa.
-- Compreender o que fazer caso já tenha clicado em um link ou fornecido informações indevidamente.
-- Reconhecer que qualquer pessoa pode ser alvo e que relatar incidentes não é motivo de constrangimento.
-
-### 6. Desenvolver uma Postura Preventiva Contínua
+### 5. Desenvolver uma Postura Preventiva Contínua
 - Manter uma atitude de desconfiança saudável diante de e-mails não solicitados, mesmo que pareçam vir de fontes confiáveis.
 - Aplicar as boas práticas aprendidas de forma consistente no dia a dia profissional.
 
