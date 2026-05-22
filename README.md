@@ -1,4 +1,4 @@
-# Treinamento em Engenharia Social — Identificação de E-mails Suspeitos
+# Treinamento em Engenharia Social: Identificação de E-mails Suspeitos
 
 Objeto de aprendizagem voltado à capacitação de colaboradores corporativos para reconhecer, analisar e reagir adequadamente a tentativas de engenharia social por e-mail.
 
