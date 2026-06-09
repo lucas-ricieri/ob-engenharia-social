@@ -42,4 +42,5 @@ Ao concluir este treinamento, o colaborador deverá ser capaz de:
 - [Clique Aqui](https://cmapscloud.ihmc.us:443/rid=22NYTVDD3-497PG1-MR5LVV)
 
 ## Mapa Instrucional
-- [Clique Aqui](https://drive.google.com/file/d/10KexPWNboBWm8lKBR5obZjyeZ5fO1lhk/view?usp=sharing)
+- [Clique Aqui](https://drive.google.com/file/d/1UK6BbKQ5DMzrpoi9F7iV4y8-exFGXS3c/view?usp=sharing)
+
