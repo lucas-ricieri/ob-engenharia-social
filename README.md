@@ -43,3 +43,6 @@ Ao concluir este treinamento, o colaborador deverá ser capaz de:
 
 ## Mapa Instrucional
 - [Clique Aqui](https://drive.google.com/file/d/10KexPWNboBWm8lKBR5obZjyeZ5fO1lhk/view?usp=sharing)
+
+##
+![Mapa intrucional](https://drive.google.com/file/d/1djz6Ne8TvM7pWbAobohB3wKdLBfOHhUE/view?usp=sharing)
