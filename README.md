@@ -39,7 +39,9 @@ Ao concluir este treinamento, o colaborador deverá ser capaz de:
 - Aplicar as boas práticas aprendidas de forma consistente no dia a dia profissional.
 
 ## Mapa Conceitual
-- [Clique Aqui](https://cmapscloud.ihmc.us:443/rid=22NYTVDD3-497PG1-MR5LVV)
+- [Clique aqui para ver em alta resolução](https://cmapscloud.ihmc.us:443/rid=22NYTVDD3-497PG1-MR5LVV)
+
+![Mapa Conceitual](mapa-conceitual.jpeg "Mapa Conceitual")
 
 ## Mapa Instrucional
 ![Mapa Instrucional](mapa-instrucional.png "Mapa Instrucional")
