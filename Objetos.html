@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Segunda Olhada — reconhecer golpes na sua caixa de entrada</title>
+<style>
+/* =====================================================================
+   SEGUNDA OLHADA — objeto de aprendizagem sobre engenharia social
+   Paleta quente (creme, grafite, oliva, terracota, mostarda, ameixa).
+   Sem azul dominante. Tipografia serifada para títulos, sans para texto.
+   ===================================================================== */
+:root{
+  --paper:#F4EEE1;        /* fundo creme quente */
+  --paper-2:#FBF6EC;      /* superfície clara (cartões, painéis) */
+  --paper-3:#EFE7D6;      /* neutro morno (cabeçalhos de lista) */
+  --ink:#2C2620;          /* texto grafite-marrom */
+  --ink-2:#4A4239;        /* texto secundário forte */
+  --muted:#8A7E6D;        /* texto apagado / legendas */
+  --line:#E3D9C6;         /* divisórias finas */
+  --line-2:#D2C5AC;       /* divisórias mais marcadas */
+
+  --sage:#6E7A4E;         /* oliva/sálvia — confiança, acerto */
+  --sage-deep:#56612F;
+  --sage-tint:#E9ECDC;
+  --clay:#B0552E;         /* terracota — alerta, phishing */
+  --clay-tint:#F3E2D7;
+  --wine:#8A3B3B;         /* vinho suave — risco forte (uso raro) */
+  --mustard:#C0892F;      /* mostarda — atenção, pretexting */
+  --mustard-tint:#F3E7CC;
+  --plum:#6C5566;         /* ameixa acinzentada — marca, ação primária */
+  --plum-deep:#574455;
+  --plum-tint:#ECE3E7;
+  --rose:#A37C86;         /* rosa antigo — detalhe secundário */
+
+  /* nomes herdados usados em estilos inline do JS */
+  --green:var(--sage);
+  --red:var(--clay);
+  --amber:var(--mustard);
+  --navy:var(--ink);
+
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
+  --sans:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --mono:"DejaVu Sans Mono","SFMono-Regular",Consolas,"Liberation Mono",ui-monospace,monospace;
+
+  --r:9px;
+  --shadow:0 1px 2px rgba(60,48,32,.06), 0 8px 24px -16px rgba(60,48,32,.28);
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--sans); font-size:16px; line-height:1.62;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+::selection{background:var(--plum-tint)}
+a{color:var(--plum-deep)}
+h1,h2,h3,h4{font-family:var(--serif); font-weight:600; color:var(--ink); line-height:1.2; margin:0}
+h1{font-size:clamp(1.85rem,4.2vw,2.45rem); letter-spacing:-.01em}
+h2{font-size:clamp(1.4rem,2.8vw,1.7rem)}
+h3{font-size:1.16rem}
+p{margin:0 0 1em}
+b,strong{font-weight:600; color:var(--ink)}
+small{font-size:.8rem}
+:focus-visible{outline:2px solid var(--plum); outline-offset:2px; border-radius:4px}
+
+/* ----------------------------- layout ----------------------------- */
+.wrap{max-width:1120px; margin:0 auto; padding:30px 22px 90px}
+.view{display:none; animation:fade .35s ease both}
+.view.active{display:block}
+@keyframes fade{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+
+.section-tag{
+  display:inline-flex; align-items:center; gap:10px;
+  font-family:var(--sans); font-size:.72rem; font-weight:600;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
+  margin-bottom:14px;
+}
+.section-tag::before{content:""; width:26px; height:1px; background:var(--line-2)}
+
+.lead{font-size:1.08rem; color:var(--ink-2); max-width:64ch; margin:0 0 4px}
+
+/* ----------------------------- topbar ----------------------------- */
+.topbar{position:sticky; top:0; z-index:40; background:rgba(251,246,236,.9);
+  backdrop-filter:saturate(140%) blur(8px); border-bottom:1px solid var(--line)}
+.topbar__inner{max-width:1120px; margin:0 auto; padding:11px 22px;
+  display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap}
+.brand{display:flex; align-items:center; gap:11px}
+.brand__mark{width:34px; height:34px; flex:none; display:grid; place-items:center;
+  border-radius:9px; background:var(--plum); color:var(--paper-2)}
+.brand__mark svg{width:19px; height:19px}
+.brand>span:last-child{display:flex; flex-direction:column; line-height:1.05;
+  font-family:var(--serif); font-size:1.18rem; font-weight:600; color:var(--ink)}
+.brand small{font-family:var(--sans); font-weight:500; font-size:.7rem;
+  letter-spacing:.04em; color:var(--muted); margin-top:2px}
+
+.nav{display:flex; gap:4px; flex-wrap:wrap}
+.nav button{
+  font-family:var(--sans); font-size:.86rem; font-weight:550; color:var(--muted);
+  background:none; border:none; cursor:pointer; padding:8px 10px 9px;
+  display:inline-flex; align-items:center; gap:7px; border-bottom:2px solid transparent;
+  transition:color .18s, border-color .18s;
+}
+.nav button svg{width:15px; height:15px; opacity:.8}
+.nav button:hover{color:var(--ink-2)}
+.nav button.active{color:var(--ink); border-bottom-color:var(--plum)}
+@media (max-width:680px){
+  .nav{width:100%; overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch}
+  .nav button{white-space:nowrap}
+}
+
+/* ----------------------------- buttons ----------------------------- */
+.btn{
+  font-family:var(--sans); font-size:.9rem; font-weight:550; color:var(--ink);
+  background:var(--paper-2); border:1px solid var(--line-2); border-radius:var(--r);
+  padding:.6em 1.05em; cursor:pointer; display:inline-flex; align-items:center; gap:8px;
+  transition:background .16s, border-color .16s, color .16s, transform .04s;
+}
+.btn svg{width:16px; height:16px}
+.btn:hover{background:var(--paper-3); border-color:var(--line-2)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.5; cursor:not-allowed}
+.btn--primary{background:var(--plum-deep); border-color:var(--plum-deep); color:#F7F1EA}
+.btn--primary:hover{background:#48394a; border-color:#48394a}
+.btn--ghost{background:transparent}
+.btn--navy{background:var(--ink); border-color:var(--ink); color:#F4EEE1}
+.btn--navy:hover{background:#1f1a15}
+.btn--danger{background:transparent; border-color:rgba(176,85,46,.45); color:var(--clay)}
+.btn--danger:hover{background:var(--clay-tint); border-color:var(--clay)}
+.btn-row{display:flex; gap:11px; flex-wrap:wrap; margin-top:20px}
+
+/* ----------------------------- início ----------------------------- */
+.hero{display:grid; grid-template-columns:1.25fr .9fr; gap:38px; align-items:center;
+  padding:14px 0 34px; border-bottom:1px solid var(--line)}
+.hero h1{margin:6px 0 16px}
+.hero .lead{margin-bottom:22px}
+.hero .underline{position:relative; white-space:nowrap}
+.hero .underline svg{position:absolute; left:0; bottom:-9px; width:100%; height:9px; color:var(--clay)}
+.hero-stats{display:flex; gap:0; margin:26px 0 6px; flex-wrap:wrap}
+.hero-stat{padding:0 22px; border-left:1px solid var(--line-2)}
+.hero-stat:first-child{padding-left:0; border-left:none}
+.hero-stat b{display:block; font-family:var(--serif); font-size:1.55rem; color:var(--ink); font-weight:600}
+.hero-stat span{font-size:.78rem; color:var(--muted)}
+.hero-art{position:relative}
+.peek{background:var(--paper-2); border:1px solid var(--line); border-radius:14px;
+  box-shadow:var(--shadow); padding:16px 17px; transform:rotate(-1.4deg)}
+.peek__bar{display:flex; align-items:center; gap:9px; margin-bottom:13px}
+.peek__ava{width:34px; height:34px; border-radius:50%; background:var(--clay-tint);
+  color:var(--clay); display:grid; place-items:center; font-weight:700; font-size:.82rem}
+.peek__from b{display:block; font-size:.9rem}
+.peek__from span{font-family:var(--mono); font-size:.74rem; color:var(--clay)}
+.peek__subj{font-family:var(--serif); font-size:1.02rem; margin-bottom:6px}
+.peek__txt{font-size:.86rem; color:var(--ink-2)}
+.peek__flag{margin-top:13px; display:inline-flex; align-items:center; gap:7px;
+  font-size:.76rem; color:var(--clay); background:var(--clay-tint);
+  border-radius:7px; padding:5px 9px; transform:rotate(1.4deg)}
+.peek__flag svg{width:14px; height:14px}
+.peek__note{position:absolute; right:-6px; bottom:-22px; font-family:var(--serif);
+  font-style:italic; font-size:.84rem; color:var(--muted); transform:rotate(-2deg)}
+@media (max-width:780px){ .hero{grid-template-columns:1fr; gap:26px} .hero-art{max-width:360px} }
+
+/* etapas — lista editorial, não cartões idênticos */
+.steps{margin:34px 0 0; border-top:1px solid var(--line)}
+.step{display:grid; grid-template-columns:auto 1fr; gap:20px; align-items:baseline;
+  padding:22px 0; border-bottom:1px solid var(--line)}
+.step__n{font-family:var(--serif); font-size:1.9rem; color:var(--line-2); font-weight:600;
+  min-width:46px}
+.step h3{margin-bottom:5px}
+.step p{margin:0; color:var(--ink-2); max-width:62ch}
+
+.foot-reset{margin-top:40px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+  padding-top:22px; border-top:1px solid var(--line)}
+.foot-reset small{color:var(--muted); max-width:46ch}
+
+/* ----------------------------- conceitual ----------------------------- */
+.concept-intro{display:grid; grid-template-columns:1.1fr .9fr; gap:34px; align-items:start;
+  margin:8px 0 30px}
+.channels{background:var(--paper-2); border:1px solid var(--line); border-radius:var(--r);
+  padding:20px 22px}
+.channels h3{margin-bottom:12px; font-size:1.05rem}
+.channels ul{list-style:none; margin:0; padding:0; columns:2; column-gap:20px}
+.channels li{display:flex; gap:8px; align-items:flex-start; font-size:.9rem;
+  color:var(--ink-2); margin-bottom:9px; break-inside:avoid}
+.channels li svg{width:14px; height:14px; color:var(--plum); flex:none; margin-top:3px}
+.aside-note{border-left:3px solid var(--mustard); background:var(--mustard-tint);
+  padding:15px 18px; border-radius:0 var(--r) var(--r) 0; margin:6px 0 0}
+.aside-note b{color:var(--ink)}
+
+.attacks{display:grid; grid-template-columns:1fr 1fr; gap:22px; margin:6px 0 30px}
+.attack{border:1px solid var(--line); border-radius:var(--r); background:var(--paper-2); overflow:hidden}
+.attack__head{padding:16px 20px 13px; border-bottom:1px solid var(--line)}
+.attack--phish .attack__head{background:var(--clay-tint)}
+.attack--pre .attack__head{background:var(--plum-tint)}
+.attack__head .k{font-size:.72rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase}
+.attack--phish .k{color:var(--clay)}
+.attack--pre .k{color:var(--plum-deep)}
+.attack__head h3{margin:4px 0 0}
+.attack__body{padding:16px 20px 20px}
+.attack__body>p{font-size:.92rem; color:var(--ink-2)}
+.chips{display:flex; flex-wrap:wrap; gap:7px; margin:4px 0 14px}
+.chip-soft{font-size:.76rem; padding:4px 10px; border-radius:20px; border:1px solid var(--line-2);
+  color:var(--ink-2); background:var(--paper)}
+.attack--phish .chip-soft{border-color:rgba(176,85,46,.35); color:var(--clay)}
+.attack--pre .chip-soft{border-color:rgba(108,85,102,.4); color:var(--plum-deep)}
+.qline{border-left:2px solid var(--line-2); padding:3px 0 3px 13px; margin:0 0 11px;
+  font-family:var(--serif); font-style:italic; font-size:.95rem; color:var(--ink-2)}
+.qline span{display:block; font-family:var(--sans); font-style:normal; font-size:.76rem; color:var(--muted); margin-top:3px}
+
+.tell{display:grid; grid-template-columns:1fr 1fr; gap:0 26px; margin:0 0 8px;
+  border-top:1px solid var(--line)}
+.tell>div{padding:16px 0; border-bottom:1px solid var(--line)}
+.tell h4{font-family:var(--sans); font-size:.74rem; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:7px}
+.tell p{margin:0; font-size:.92rem; color:var(--ink-2)}
+@media (max-width:760px){ .concept-intro,.attacks,.tell{grid-template-columns:1fr} .channels ul{columns:1} }
+
+/* quiz */
+.quiz-head{margin:34px 0 16px}
+#quiz{display:grid; gap:16px}
+.quiz-q{background:var(--paper-2); border:1px solid var(--line); border-left:3px solid var(--plum);
+  border-radius:0 var(--r) var(--r) 0; padding:18px 20px}
+.quiz-q h4{display:flex; gap:11px; font-family:var(--serif); font-size:1.05rem; margin-bottom:13px}
+.quiz-q .qn{color:var(--plum); font-weight:600}
+.opts{display:grid; gap:8px}
+.opt{display:flex; gap:11px; align-items:flex-start; padding:11px 13px; cursor:pointer;
+  border:1px solid var(--line); border-radius:8px; background:var(--paper);
+  font-size:.92rem; transition:border-color .14s, background .14s}
+.opt:hover{border-color:var(--line-2); background:var(--paper-3)}
+.opt input{margin-top:3px; accent-color:var(--plum)}
+.opt.disabled{cursor:default; opacity:1}
+.opt.disabled:hover{background:var(--paper); border-color:var(--line)}
+.opt.correct{border-color:var(--sage); background:var(--sage-tint)}
+.opt.wrong{border-color:var(--clay); background:var(--clay-tint)}
+.feedback{display:none; margin-top:13px; padding:12px 15px; border-radius:8px; font-size:.9rem; color:var(--ink-2)}
+.feedback.show{display:block}
+.feedback b{display:block; margin-bottom:3px}
+.feedback.ok{background:var(--sage-tint); border-left:3px solid var(--sage)} .feedback.ok b{color:var(--sage-deep)}
+.feedback.no{background:var(--clay-tint); border-left:3px solid var(--clay)} .feedback.no b{color:var(--clay)}
+#quizResult{display:none; margin-top:18px; align-items:center; gap:18px;
+  background:var(--paper-2); border:1px solid var(--line); border-radius:var(--r); padding:18px 22px}
+#quizResult.show{display:flex; flex-wrap:wrap}
+#quizScore{font-family:var(--serif); font-size:2rem; color:var(--plum-deep); font-weight:600}
+#quizMsg{flex:1; min-width:240px; color:var(--ink-2); font-size:.92rem}
+
+/* ----------------------------- caixa de entrada ----------------------------- */
+.purpose{border-left:3px solid var(--sage); background:var(--sage-tint);
+  padding:14px 18px; border-radius:0 var(--r) var(--r) 0; font-size:.92rem; color:var(--ink-2); margin:18px 0 0}
+.mail-app{display:grid; grid-template-columns:172px 1fr;
+  border:1px solid var(--line); border-radius:14px; overflow:hidden; background:var(--paper-2);
+  box-shadow:var(--shadow); margin:18px 0; min-height:520px}
+.mail-side{background:var(--paper-3); border-right:1px solid var(--line); padding:14px 12px;
+  display:flex; flex-direction:column; gap:3px}
+.folder{display:flex; align-items:center; gap:9px; padding:9px 11px; border-radius:8px;
+  font-size:.86rem; color:var(--ink-2); cursor:default}
+.folder svg{width:16px; height:16px; opacity:.7}
+.folder.on{background:var(--plum-tint); color:var(--plum-deep); font-weight:600}
+.folder.on svg{opacity:1; color:var(--plum)}
+.folder .count{margin-left:auto; font-size:.72rem; background:var(--paper); color:var(--muted);
+  border-radius:20px; padding:1px 8px; font-family:var(--mono)}
+.mail-side .divider{height:1px; background:var(--line); margin:9px 4px}
+.mail-main{display:grid; grid-template-columns:minmax(230px,.85fr) 1.35fr}
+.mail-list{border-right:1px solid var(--line); display:flex; flex-direction:column; min-width:0}
+.mail-list__head{padding:12px 16px; font-size:.74rem; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--muted); border-bottom:1px solid var(--line); display:flex; justify-content:space-between;
+  align-items:center; background:var(--paper-2); position:sticky; top:0}
+.mail-list>div:last-child{overflow-y:auto; max-height:560px}
+.mono{font-family:var(--mono)}
+
+.mail-item{display:flex; gap:11px; padding:13px 15px; border-bottom:1px solid var(--line);
+  cursor:pointer; transition:background .14s; position:relative}
+.mail-item:hover{background:var(--paper-3)}
+.mail-item.sel{background:var(--plum-tint)}
+.mail-item.sel::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--plum)}
+.mail-item__dot{width:8px; height:8px; border-radius:50%; background:var(--clay); margin-top:6px; flex:none}
+.mail-item.done .mail-item__dot{background:var(--line-2)}
+.mail-item.done .mail-item__from, .mail-item.done .mail-item__subj{color:var(--muted); font-weight:400}
+.mail-item__body{min-width:0; flex:1}
+.mail-item__top{display:flex; justify-content:space-between; gap:8px; align-items:baseline}
+.mail-item__from{font-weight:600; font-size:.9rem; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.mail-item__time{font-size:.72rem; color:var(--muted); white-space:nowrap; flex:none}
+.mail-item__subj{font-size:.88rem; color:var(--ink-2); margin:2px 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.mail-item__prev{font-family:var(--mono); font-size:.72rem; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.mail-item__tags{margin-top:6px}
+.tag-mini{display:inline-block; font-size:.7rem; font-weight:600; padding:2px 8px; border-radius:5px}
+.tag-mini.ok{background:var(--sage-tint); color:var(--sage-deep)}
+.tag-mini.no{background:var(--clay-tint); color:var(--clay)}
+.tag-mini.att{background:var(--mustard-tint); color:#8a6418}
+
+.mail-read{padding:24px 26px; overflow-y:auto; max-height:600px; min-width:0}
+.mail-empty{height:100%; min-height:380px; display:flex; flex-direction:column; gap:14px;
+  align-items:center; justify-content:center; text-align:center; color:var(--muted); font-size:.92rem}
+.mail-empty svg{width:42px; height:42px; opacity:.5}
+.mail-read__subj{font-family:var(--serif); font-size:1.32rem; color:var(--ink); margin-bottom:16px; line-height:1.25}
+.mail-read__from{display:flex; align-items:center; gap:13px; padding-bottom:16px; border-bottom:1px solid var(--line); margin-bottom:18px}
+.avatar{width:42px; height:42px; border-radius:50%; background:var(--plum-tint); color:var(--plum-deep);
+  display:grid; place-items:center; font-weight:700; font-size:.92rem; flex:none}
+.mail-read__meta{flex:1; min-width:0} .mail-read__meta b{font-size:.96rem}
+.mail-read__addr{font-family:var(--mono); font-size:.78rem; color:var(--muted)}
+.mail-read__date{font-size:.78rem; color:var(--muted); white-space:nowrap}
+.mail-body{white-space:pre-wrap; font-size:.95rem; color:var(--ink-2); line-height:1.7}
+.mlink{display:inline-block; margin:4px 0; font-family:var(--mono); font-size:.82rem;
+  color:var(--plum-deep); text-decoration:underline; text-underline-offset:2px; word-break:break-all}
+.attach{display:inline-flex; align-items:center; gap:11px; margin-top:18px; padding:10px 14px;
+  border:1px solid var(--line-2); border-radius:9px; background:var(--paper-3)}
+.attach svg{width:20px; height:20px; color:var(--muted); transform:rotate(8deg)}
+.attach b{font-family:var(--mono); font-size:.82rem; color:var(--ink)}
+.attach span{font-size:.72rem; color:var(--muted)}
+.reply-fake{margin-top:20px; padding-top:16px; border-top:1px dashed var(--line-2)}
+
+/* anotações (exemplos comentados) */
+.annot{margin-top:22px; padding-top:20px; border-top:1px solid var(--line)}
+.verdict{display:inline-block; font-size:.78rem; font-weight:600; padding:4px 11px; border-radius:6px; margin-bottom:13px}
+.verdict.normal{background:var(--sage-tint); color:var(--sage-deep)}
+.verdict.phishing{background:var(--clay-tint); color:var(--clay)}
+.verdict.pretexting{background:var(--mustard-tint); color:#8a6418}
+.annot h4{display:flex; align-items:center; gap:8px; font-family:var(--sans); font-size:.82rem;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-bottom:14px}
+.annot h4 svg{width:15px; height:15px}
+.annot-item{display:flex; gap:12px; margin-bottom:13px}
+.annot-badge{flex:none; font-size:.68rem; font-weight:600; padding:3px 9px; border-radius:5px;
+  height:fit-content; background:var(--clay-tint); color:var(--clay)}
+.annot-badge.ok{background:var(--sage-tint); color:var(--sage-deep)}
+.annot-item p{margin:0; font-size:.9rem; color:var(--ink-2)}
+.annot-item p b{color:var(--ink)}
+
+/* ----------------------------- simulação ----------------------------- */
+.ribbon{display:flex; align-items:center; gap:24px; flex-wrap:wrap; margin:18px 0 4px;
+  padding:15px 20px; background:var(--paper-2); border:1px solid var(--line); border-radius:var(--r)}
+.meter{flex:1; min-width:220px}
+.meter__bar{height:8px; background:var(--paper-3); border-radius:20px; overflow:hidden; border:1px solid var(--line)}
+.meter__fill{height:100%; width:0; background:linear-gradient(90deg,var(--sage),var(--sage-deep)); transition:width .4s ease}
+.meter__lbl{display:flex; justify-content:space-between; font-size:.76rem; color:var(--muted); margin-top:7px}
+
+/* análise */
+.analysis{margin-top:22px; padding-top:20px; border-top:1px solid var(--line)}
+.analysis h4{font-family:var(--serif); font-size:1.02rem; margin:0 0 4px}
+.analysis .hint{font-size:.82rem; color:var(--muted); margin:0 0 12px}
+.type-opts{display:flex; gap:9px; flex-wrap:wrap; margin-bottom:22px}
+.type-opt{flex:1; min-width:130px; display:flex; align-items:center; gap:9px; padding:12px 14px;
+  border:1px solid var(--line-2); border-radius:9px; background:var(--paper); cursor:pointer;
+  font-size:.9rem; transition:border-color .14s, background .14s}
+.type-opt input{accent-color:var(--plum)}
+.type-opt:hover{background:var(--paper-3)}
+.type-opt.pick{border-color:var(--plum); background:var(--plum-tint); font-weight:600}
+.sig-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:6px}
+.sig{display:flex; gap:9px; align-items:flex-start; padding:9px 12px; border:1px solid var(--line);
+  border-radius:8px; background:var(--paper); cursor:pointer; font-size:.85rem; color:var(--ink-2);
+  transition:border-color .14s, background .14s}
+.sig input{margin-top:2px; accent-color:var(--sage)}
+.sig:hover{background:var(--paper-3)}
+.sig.pick{border-color:var(--sage); background:var(--sage-tint); color:var(--ink)}
+@media (max-width:560px){ .sig-grid{grid-template-columns:1fr} }
+
+.efb{display:none; border-radius:var(--r); padding:18px 20px; margin-bottom:6px}
+.efb.show{display:block}
+.efb.ok{background:var(--sage-tint); border:1px solid rgba(110,122,78,.4)}
+.efb.no{background:var(--clay-tint); border:1px solid rgba(176,85,46,.35)}
+.efb__head{display:flex; align-items:center; gap:9px; font-weight:600; font-size:1rem; margin-bottom:10px}
+.efb__head svg{width:20px; height:20px}
+.efb.ok .efb__head{color:var(--sage-deep)} .efb.no .efb__head{color:var(--clay)}
+.efb p{font-size:.9rem; color:var(--ink-2); margin:0 0 8px}
+.sig-tags{display:flex; flex-wrap:wrap; gap:7px; margin:4px 0 6px}
+.st{font-size:.76rem; padding:3px 10px; border-radius:6px; background:var(--paper)}
+.st.hit{color:var(--sage-deep); border:1px solid var(--sage)}
+.st.miss{color:var(--muted); border:1px dashed var(--line-2)}
+.pts{font-weight:600; color:var(--ink)}
+
+/* ----------------------------- resultado ----------------------------- */
+.result-hero{text-align:center; background:var(--paper-2); border:1px solid var(--line);
+  border-radius:16px; padding:30px 24px; margin:6px 0 22px}
+.result-hero h2{margin-bottom:16px}
+.score-ring{position:relative; width:150px; height:150px; margin:6px auto 12px}
+.score-ring .pct{position:absolute; inset:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center}
+.score-ring .pct b{font-family:var(--serif); font-size:2rem; color:var(--ink); line-height:1}
+.score-ring .pct span{font-size:.72rem; color:var(--muted); margin-top:2px}
+
+.kpi-grid{display:grid; grid-template-columns:repeat(4,1fr); margin:0; border-top:1px solid var(--line)}
+.kpi{padding:18px 16px; text-align:center; border-bottom:1px solid var(--line); border-right:1px solid var(--line)}
+.kpi:last-child{border-right:none}
+.kpi b{display:block; font-family:var(--serif); font-size:1.8rem; color:var(--ink); font-weight:600}
+.kpi span{font-size:.76rem; color:var(--muted)}
+@media (max-width:620px){ .kpi-grid{grid-template-columns:1fr 1fr} .kpi:nth-child(2){border-right:none} }
+
+.card{background:var(--paper-2); border:1px solid var(--line); border-radius:var(--r); padding:22px 24px}
+.card h3{margin-bottom:14px}
+.grid{display:grid; gap:18px}
+.grid-2{grid-template-columns:1fr 1fr}
+@media (max-width:680px){ .grid-2{grid-template-columns:1fr} }
+
+.cat-bars{display:grid; gap:16px}
+.cat-bar__top{display:flex; justify-content:space-between; font-size:.86rem; color:var(--ink-2); margin-bottom:6px}
+.cat-bar__track{height:9px; background:var(--paper-3); border:1px solid var(--line); border-radius:20px; overflow:hidden}
+.cat-bar__fill{height:100%; border-radius:20px; transition:width .5s ease}
+.chip-row{display:flex; flex-wrap:wrap; gap:8px}
+.chip{font-size:.8rem; padding:5px 12px; border-radius:20px; background:var(--sage-tint); color:var(--sage-deep)}
+.chip.amber{background:var(--mustard-tint); color:#8a6418}
+.msg-box{padding:14px 17px; border-radius:var(--r); font-size:.92rem; color:var(--ink-2)}
+.msg-box.good{background:var(--sage-tint); border-left:3px solid var(--sage)}
+.msg-box.mid{background:var(--mustard-tint); border-left:3px solid var(--mustard)}
+.msg-box.low{background:var(--clay-tint); border-left:3px solid var(--clay)}
+.reco-list{list-style:none; margin:6px 0 0; padding:0; display:grid; gap:11px}
+.reco-list li{display:flex; gap:11px; font-size:.92rem; color:var(--ink-2)}
+.reco-list svg{width:18px; height:18px; color:var(--plum); flex:none; margin-top:2px}
+
+/* ----------------------------- certificado ----------------------------- */
+.cert-setup{display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap; margin:6px 0 18px}
+.field{flex:1; min-width:240px}
+.field label{display:block; font-size:.8rem; color:var(--muted); margin-bottom:6px}
+.field input{width:100%; padding:11px 14px; border:1px solid var(--line-2); border-radius:8px;
+  background:var(--paper); font-family:var(--sans); font-size:.95rem; color:var(--ink)}
+.field input:focus{outline:none; border-color:var(--plum); box-shadow:0 0 0 3px var(--plum-tint)}
+.cert-locked{text-align:center; color:var(--muted); padding:30px 20px; border:1px dashed var(--line-2);
+  border-radius:var(--r); font-size:.9rem; background:var(--paper-3)}
+
+.certificate{position:relative; background:var(--paper-2); border:1px solid var(--line-2);
+  border-radius:6px; padding:42px 46px; text-align:center; margin-top:6px;
+  box-shadow:0 1px 0 var(--line) inset, var(--shadow)}
+.certificate::after{content:""; position:absolute; inset:11px; border:1px solid var(--line-2); border-radius:3px; pointer-events:none}
+.cert-top{display:flex; align-items:center; justify-content:center; gap:11px; margin-bottom:22px}
+.cert-seal{width:38px; height:38px; border-radius:50%; background:var(--plum-tint); color:var(--plum-deep);
+  display:grid; place-items:center} .cert-seal svg{width:21px; height:21px}
+.cert-org{font-family:var(--serif); font-size:1rem; color:var(--plum-deep); letter-spacing:.02em}
+.cert-title{font-family:var(--serif); font-size:1.75rem; color:var(--ink); margin-bottom:18px; letter-spacing:.01em}
+.cert-sub{font-size:.82rem; color:var(--muted); text-transform:uppercase; letter-spacing:.14em; margin:0 0 8px}
+.cert-name{font-family:var(--serif); font-size:2rem; color:var(--plum-deep); font-weight:600;
+  padding:0 0 12px; border-bottom:1px solid var(--line-2); display:inline-block; min-width:60%; margin-bottom:20px}
+.cert-body{max-width:54ch; margin:0 auto 26px; font-size:.96rem; color:var(--ink-2); line-height:1.7}
+.cert-foot{display:flex; justify-content:space-around; gap:24px; flex-wrap:wrap; margin-top:18px}
+.sig-line .ln{font-size:.82rem; color:var(--muted)}
+.sig-line .ln b{display:block; color:var(--ink); font-size:.92rem; padding-bottom:5px;
+  border-bottom:1px solid var(--line-2); margin-bottom:6px; min-width:170px}
+.cert-disclaimer{margin:24px 0 0; font-size:.72rem; color:var(--muted); font-style:italic}
+.cert-actions{margin-top:18px}
+
+/* ----------------------------- toast ----------------------------- */
+.toast{position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
+  background:var(--ink); color:var(--paper); padding:11px 20px; border-radius:9px; font-size:.88rem;
+  box-shadow:0 12px 30px -10px rgba(40,30,20,.5); opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:80}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+@media (max-width:820px){
+  .mail-app{grid-template-columns:1fr}
+  .mail-side{flex-direction:row; overflow-x:auto; border-right:none; border-bottom:1px solid var(--line)}
+  .mail-side .divider, .mail-side .btn{display:none}
+  .mail-main{grid-template-columns:1fr}
+  .mail-list{border-right:none; border-bottom:1px solid var(--line)}
+  .mail-list>div:last-child{max-height:320px}
+}
+@media (prefers-reduced-motion:reduce){ *{transition:none!important; animation:none!important} }
+
+/* ----------------------------- impressão ----------------------------- */
+@media print{
+  body{background:#fff}
+  .topbar, .nav, .toast, #resultContent, .cert-setup, .cert-actions,
+  .cert-locked, h2:not(.cert-title){display:none!important}
+  .wrap{padding:0; max-width:none}
+  .view{display:none!important}
+  #view-resultado{display:block!important}
+  .cert-print-area{margin:0!important}
+  .cert-print-area .card{border:none; padding:0; box-shadow:none; background:#fff}
+  .certificate{box-shadow:none; border:1px solid #b9ac90; page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ TOPBAR ============ -->
+<header class="topbar">
+  <div class="topbar__inner">
+    <div class="brand">
+      <span class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="14" height="11" rx="2"/><path d="m3.2 6.5 6.3 4.4 6.3-4.4"/><circle cx="17.2" cy="16.2" r="3.3"/><path d="m21 21-1.7-1.7"/></svg>
+      </span>
+      <span>Segunda Olhada<small>Golpes na caixa de entrada</small></span>
+    </div>
+    <nav class="nav" id="nav" aria-label="Navegação principal">
+      <button data-go="inicio" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Início</button>
+      <button data-go="conceitual"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M9 5v14M4 9h5"/></svg>Módulo Conceitual</button>
+      <button data-go="pratico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18v14H3z"/><path d="m3 7 9 6 9-6"/></svg>Módulo Prático</button>
+      <button data-go="simulacao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h20v12H2z"/><path d="m2 8 10 6 10-6"/><circle cx="18" cy="7" r="3" fill="currentColor" stroke="none"/></svg>Simulação</button>
+      <button data-go="resultado"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4"/><path d="M5 4h14v6a7 7 0 0 1-14 0V4Z"/></svg>Resultado</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============ INÍCIO ============ -->
+<section id="view-inicio" class="view active">
+  <div class="hero">
+    <div>
+      <span class="section-tag">Objeto de aprendizagem · Segurança no dia a dia</span>
+      <h1>Antes de clicar, dê uma <span class="underline">segunda olhada<svg viewBox="0 0 200 9" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M2 5.5C40 2 80 8 118 4.5S180 2 198 5"/></svg></span>.</h1>
+      <p class="lead">Todo dia chegam mensagens que parecem ser do banco, da loja onde você comprou, da transportadora, de um amigo. A maioria é real. Algumas só querem que você aja rápido — e entregue uma senha, um código ou seus dados. Aqui você treina o olhar para reconhecer <strong>phishing</strong> e <strong>pretexting</strong> antes de cair.</p>
+      <div class="hero-stats">
+        <div class="hero-stat"><b>30</b><span>mensagens para analisar</span></div>
+        <div class="hero-stat"><b>2</b><span>módulos + simulação</span></div>
+        <div class="hero-stat"><b>~15min</b><span>do começo ao fim</span></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn--primary" onclick="go('conceitual')">Começar pelo conceito
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <button class="btn btn--ghost" onclick="go('simulacao')">Pular para a simulação</button>
+      </div>
+    </div>
+    <div class="hero-art">
+      <div class="peek" aria-hidden="true">
+        <div class="peek__bar">
+          <div class="peek__ava">BL</div>
+          <div class="peek__from"><b>Banco Lumiar</b><span>seguranca@banco-lumiar.verifica-conta.net</span></div>
+        </div>
+        <div class="peek__subj">Movimentação não reconhecida</div>
+        <div class="peek__txt">Identificamos uma compra de R$ 1.299,90. Se não foi você, confirme seus dados em até 30 minutos para não bloquearmos sua conta…</div>
+        <div class="peek__flag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>o domínio depois do @ não é o do banco</div>
+      </div>
+      <div class="peek__note">o aviso parece real — o endereço não</div>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step"><div class="step__n">01</div><div><h3>Entenda o que está em jogo</h3><p>O que é engenharia social, por que ela funciona mesmo com gente atenta e como separar phishing de pretexting.</p></div></div>
+    <div class="step"><div class="step__n">02</div><div><h3>Leia exemplos comentados</h3><p>Quatro mensagens abertas linha a linha, com cada pista de fraude apontada e explicada — e uma legítima, para comparar.</p></div></div>
+    <div class="step"><div class="step__n">03</div><div><h3>Pratique numa caixa de entrada</h3><p>Trinta mensagens do cotidiano para classificar e marcar os sinais. No fim, um retrato do seu desempenho e um certificado.</p></div></div>
+  </div>
+
+  <div class="foot-reset">
+    <button class="btn btn--danger" onclick="limparTudo()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+      Limpar meu progresso
+    </button>
+    <small>O que você faz aqui fica salvo só neste navegador. Pode fechar a página e voltar depois de onde parou.</small>
+  </div>
+</section>
+<!-- ============ MÓDULO CONCEITUAL ============ -->
+<section id="view-conceitual" class="view">
+  <span class="section-tag">Módulo conceitual</span>
+  <h1>O golpe não invade o sistema. Ele convence você.</h1>
+  <p class="lead">Engenharia social é o nome para as artimanhas que miram a pessoa, não a máquina. Em vez de quebrar uma senha, o golpista te convence a entregá-la — usando pressa, medo, curiosidade ou a confiança que você tem em uma marca conhecida.</p>
+
+  <div class="concept-intro">
+    <div class="channels">
+      <h3>Onde isso aparece</h3>
+      <ul>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14v10H5z"/><path d="m5 8 7 5 7-5"/></svg>E-mails</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H8l-4 3z"/></svg>Mensagens e SMS</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg>Redes sociais</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9"/></svg>Falsas notificações</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Ligações</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v12H4z"/><path d="M4 9h16"/><circle cx="7" cy="7" r=".6" fill="currentColor"/></svg>Páginas falsas</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v8H3z"/><path d="M14 9h4l3 3v3h-7z"/><circle cx="7" cy="17" r="1.6"/><circle cx="17" cy="17" r="1.6"/></svg>Avisos de entrega</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-4 9 4-9 4z"/><path d="M7 11v5l5 2 5-2v-5"/></svg>Ofertas e prêmios</li>
+      </ul>
+    </div>
+    <div>
+      <p>A simulação deste curso é toda em e-mail, porque ali dá para ver o remetente, o endereço e o pedido com calma. Mas o que você vai treinar serve para qualquer canal: a pergunta é sempre a mesma — <strong>quem está pedindo, o que está pedindo e por que com tanta pressa?</strong></p>
+      <div class="aside-note"><b>O que você sai sabendo:</b> separar uma mensagem comum de uma tentativa de golpe, reconhecer os sinais de manipulação e decidir o que fazer sem agir no impulso.</div>
+    </div>
+  </div>
+
+  <h2 style="margin-bottom:14px">Dois jeitos de te enganar</h2>
+  <div class="attacks">
+    <div class="attack attack--phish">
+      <div class="attack__head"><span class="k">Phishing</span><h3>A isca jogada para muita gente</h3></div>
+      <div class="attack__body">
+        <p>Disparado em massa, na esperança de que alguém morda. Funciona pelo susto ou pela pressa: cria um problema (ou um prêmio) e empurra você para um link antes que você pare para pensar.</p>
+        <div class="chips"><span class="chip-soft">urgência</span><span class="chip-soft">medo</span><span class="chip-soft">curiosidade</span></div>
+        <div class="qline">"Sua conta será bloqueada em 30 minutos. Confirme seus dados agora."<span>medo de perder o acesso</span></div>
+        <div class="qline">"Você ganhou um vale de R$ 200 — resgate antes que acabe."<span>curiosidade e oferta boa demais</span></div>
+        <div class="qline">"Sua encomenda está retida. Pague a taxa de liberação por este link."<span>pressa para não perder o pacote</span></div>
+      </div>
+    </div>
+    <div class="attack attack--pre">
+      <div class="attack__head"><span class="k">Pretexting</span><h3>A história feita sob medida</h3></div>
+      <div class="attack__body">
+        <p>Aqui não há disparo em massa: o golpista monta um personagem crível — o "suporte do banco", um parente, um recrutador — e conversa com naturalidade. A confiança vem antes do pedido, que costuma parecer pequeno e razoável.</p>
+        <div class="chips"><span class="chip-soft">confiança</span><span class="chip-soft">autoridade</span><span class="chip-soft">familiaridade</span></div>
+        <div class="qline">"Aqui é da segurança do banco. Para te proteger, me confirma o código que chegou no seu SMS."<span>autoridade pedindo o código</span></div>
+        <div class="qline">"Oi, mudei de número — é a tia Lúcia. Você consegue me fazer um Pix rapidinho?"<span>alguém de confiança, fora do canal de sempre</span></div>
+        <div class="qline">"Vi sua candidatura à vaga. Falta só enviar seus documentos e uma taxa de cadastro."<span>processo plausível com um pedido incomum</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tell">
+    <div><h4>Como costuma chegar</h4><p>Phishing vem para muita gente ao mesmo tempo, genérico. Pretexting chega direcionado, muitas vezes te chamando pelo nome ou citando algo seu.</p></div>
+    <div><h4>De que se aproveita</h4><p>Phishing aposta na reação no susto. Pretexting aposta no vínculo: você baixa a guarda porque parece falar com quem deveria.</p></div>
+    <div><h4>O que pede</h4><p>Phishing manda clicar e preencher numa página. Pretexting puxa conversa e pede um dado, um código ou um favor — sem link chamativo.</p></div>
+    <div><h4>O que sempre vale</h4><p>Confira o endereço depois do @, desconfie de pressa e de sigilo, e confirme pelo canal oficial que você já conhece — nunca pelo contato que chegou.</p></div>
+  </div>
+
+  <div class="aside-note" style="border-left-color:var(--sage);background:var(--sage-tint);margin-top:26px"><b>Resumindo:</b> a pergunta que resolve quase tudo é sempre a mesma — quem está pedindo, o que está pedindo e por que com tanta pressa? Guarde isso e siga para ver essas ideias aplicadas a mensagens reais.</div>
+
+  <div class="btn-row">
+    <button class="btn" onclick="go('inicio')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Voltar ao início</button>
+    <button class="btn btn--primary" onclick="go('pratico')">Ver exemplos comentados
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+</section>
+<!-- ============ MÓDULO PRÁTICO ============ -->
+<section id="view-pratico" class="view">
+  <span class="section-tag">Módulo prático</span>
+  <h1>Quatro mensagens, abertas com calma</h1>
+  <p class="lead">Selecione cada uma à esquerda para ler o e-mail inteiro e, logo abaixo, ver o que olhar: o endereço do remetente, o tom, o pedido e os detalhes que entregam (ou não) uma fraude.</p>
+
+  <div class="purpose"><strong>Por que isso ajuda:</strong> antes de pontuar sozinho na simulação, vale ver alguém apontando as pistas. Tem mensagem legítima no meio de propósito — porque desconfiar de tudo também atrapalha.</div>
+
+  <div class="mail-app" style="margin-top:18px">
+    <aside class="mail-side">
+      <div class="folder on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H4z"/><path d="M4 9h4l2 3h4l2-3h4"/></svg>Entrada<span class="count">4</span></div>
+      <div class="folder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4 20-7Z"/></svg>Enviados</div>
+      <div class="folder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/></svg>Rascunhos</div>
+      <div class="divider"></div>
+      <div class="folder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>Lixeira</div>
+    </aside>
+    <div class="mail-main">
+      <div class="mail-list">
+        <div class="mail-list__head">Comentados <span class="mono" style="font-weight:600">4</span></div>
+        <div id="exemploList"></div>
+      </div>
+      <div class="mail-read" id="exemploRead">
+        <div class="mail-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H4z"/><path d="M4 9h4l2 3h4l2-3h4"/></svg>
+          Escolha uma mensagem à esquerda para ler a análise.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn" onclick="go('conceitual')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Voltar ao conceito</button>
+    <button class="btn btn--primary" onclick="go('simulacao')">Quero tentar sozinho
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+</section>
+
+<!-- ============ SIMULAÇÃO ============ -->
+<section id="view-simulacao" class="view">
+  <span class="section-tag">Simulação</span>
+  <h1>Sua caixa de entrada</h1>
+  <p class="lead">Trinta mensagens como as que chegam todo dia. Abra cada uma, diga se é normal, phishing ou pretexting, marque os sinais que notar e confirme para ver o resultado. Vale tanto reconhecer o golpe quanto perceber que uma mensagem é só uma mensagem.</p>
+
+  <div class="ribbon">
+    <div class="meter">
+      <div class="meter__bar"><div class="meter__fill" id="simFill"></div></div>
+      <div class="meter__lbl"><span id="simProgressTxt">0 de 30 analisados</span><span id="simPctTxt">0%</span></div>
+    </div>
+    <div style="display:flex;gap:22px">
+      <div style="text-align:center"><b style="font-size:1.3rem;color:var(--navy);font-family:var(--serif)" id="simScore">0</b><div style="font-size:.74rem;color:var(--muted)">pontos</div></div>
+      <div style="text-align:center"><b style="font-size:1.3rem;color:var(--navy);font-family:var(--serif)" id="simMax">150</b><div style="font-size:.74rem;color:var(--muted)">máximo</div></div>
+    </div>
+    <button class="btn btn--danger" onclick="reiniciarSim()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+      Recomeçar
+    </button>
+  </div>
+
+  <div class="mail-app">
+    <aside class="mail-side">
+      <div class="folder on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H4z"/><path d="M4 9h4l2 3h4l2-3h4"/></svg>Entrada<span class="count" id="folderCount">30</span></div>
+      <div class="folder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4 20-7Z"/></svg>Enviados</div>
+      <div class="folder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/></svg>Rascunhos</div>
+      <div class="divider"></div>
+      <div class="folder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>Lixeira</div>
+      <div class="divider"></div>
+      <button class="btn btn--primary" style="width:100%;justify-content:center;font-size:.84rem" onclick="go('resultado')" id="simResultBtn">Ver resultado</button>
+    </aside>
+    <div class="mail-main">
+      <div class="mail-list">
+        <div class="mail-list__head">Entrada <span class="mono" id="simAnalyzedTxt" style="font-weight:600">0/30</span></div>
+        <div id="simList"></div>
+      </div>
+      <div class="mail-read" id="simRead">
+        <div class="mail-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H4z"/><path d="M4 9h4l2 3h4l2-3h4"/></svg>
+          Abra uma mensagem para começar.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RESULTADO ============ -->
+<section id="view-resultado" class="view">
+  <span class="section-tag">Resultado</span>
+  <div id="resultContent"></div>
+
+  <!-- Certificado -->
+  <div class="cert-print-area" style="margin-top:24px">
+    <div class="card">
+      <h2>Certificado de conclusão</h2>
+      <div class="cert-setup">
+        <div class="field">
+          <label for="certName">Seu nome, como deve aparecer</label>
+          <input type="text" id="certName" placeholder="Ex.: Ana Ribeiro de Souza" autocomplete="name">
+        </div>
+        <button class="btn btn--primary" onclick="emitirCertificado()">Gerar certificado</button>
+      </div>
+      <div id="certArea"></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+<script>
+/* =====================================================================
+   SEGUNDA OLHADA — dados, navegação, quiz, simulação, pontuação, certificado
+   ===================================================================== */
+
+/* ---------- Rótulos dos sinais de manipulação ---------- */
+const SINAIS = {
+  urgencia:      'Urgência artificial',
+  medo:          'Medo ou ameaça',
+  curiosidade:   'Curiosidade ou oferta tentadora',
+  autoridade:    'Autoridade (banco, órgão, suporte)',
+  confianca:     'Excesso de confiança / familiaridade',
+  senha:         'Pedido de senha',
+  codigo:        'Pedido de código de verificação',
+  dominio:       'Domínio ou endereço suspeito',
+  link:          'Link suspeito',
+  anexo:         'Anexo inesperado',
+  confidencial:  'Pedido de dados pessoais',
+  inconsistencia:'Inconsistência no remetente',
+  nenhum:        'Não há sinais suspeitos'
+};
+const TIPOS = { normal:'Normal', phishing:'Phishing', pretexting:'Pretexting' };
+
+/* ---------- Quiz conceitual ---------- */
+const QUIZ = [
+  { q:'O que melhor descreve engenharia social?',
+    o:['Uma falha nos servidores que enviam e-mail.',
+       'A manipulação de pessoas para que elas ajam ou entreguem dados por conta própria.',
+       'Um tipo de antivírus que bloqueia golpes.',
+       'Um método para embaralhar mensagens.'],
+    c:1, e:'O alvo é a pessoa, não o sistema. O golpista explora pressa, confiança e distração para que você mesmo faça o que ele quer.' },
+  { q:'Qual é a diferença entre phishing e pretexting?',
+    o:['Phishing só acontece por telefone; pretexting, só por e-mail.',
+       'São a mesma coisa, só muda o nome.',
+       'Phishing é disparado em massa e aposta na reação rápida; pretexting cria uma história sob medida para ganhar sua confiança.',
+       'Pretexting é sempre inofensivo.'],
+    c:2, e:'Phishing é a isca jogada para muita gente. Pretexting é a conversa montada para uma pessoa, apoiada em confiança ou autoridade.' },
+  { q:'Uma mensagem diz: "Sua conta será bloqueada em 30 minutos, confirme agora." Que recurso é esse?',
+    o:['Cordialidade.','Urgência artificial, para você agir antes de pensar.','Transparência.','Um aviso de rotina.'],
+    c:1, e:'Prazos curtíssimos e ameaça de bloqueio existem para tirar você do modo "analisar" e te jogar no modo "obedecer".' },
+  { q:'Alguém que diz ser do "suporte do banco" pede o código que acabou de chegar no seu SMS. O que fazer?',
+    o:['Passar o código, afinal é o suporte.',
+       'Nunca informar o código. Banco de verdade não pede isso — encerre e ligue para o número oficial do cartão.',
+       'Mandar para um amigo decidir.',
+       'Clicar no link que veio junto para conferir.'],
+    c:1, e:'O código de verificação é a chave da sua conta. Nenhum atendimento legítimo pede que você o repita por mensagem ou telefone.' },
+  { q:'Olhando o remetente, o que mais ajuda a flagrar uma fraude?',
+    o:['A cor do logotipo.',
+       'O tamanho da fonte do texto.',
+       'O endereço depois do @ e se ele realmente pertence ao serviço que diz representar.',
+       'A quantidade de imagens.'],
+    c:2, e:'"banco-lumiar.com.br" é diferente de "lumiar-seguranca.net". Conferir o domínio é uma das pistas mais confiáveis.' },
+  { q:'Chegou uma cobrança com um anexo que você não esperava, de um remetente desconhecido. Qual a melhor reação?',
+    o:['Abrir rápido para não perder o prazo.',
+       'Não abrir o anexo nem o link e confirmar a cobrança no aplicativo ou site oficial que você já usa.',
+       'Responder o próprio e-mail pedindo mais detalhes.',
+       'Encaminhar para todo mundo se prevenir.'],
+    c:1, e:'Anexo inesperado é um clássico. Na dúvida, não interaja com a mensagem e verifique direto na fonte oficial que você conhece.' }
+];
+
+/* ---------- Exemplos comentados (módulo prático) ---------- */
+const EXEMPLOS = [
+  {
+    tipo:'normal', remetente:'Zappi', email:'pedidos@zappi.com.br',
+    assunto:'Pedido #ZP-48217 confirmado', data:'Hoje, 10:24',
+    corpo:'Olá, Ana!\n\nRecebemos seu pedido e ele já está sendo preparado.\n\nPedido: #ZP-48217\nItem: fone de ouvido sem fio (1 un.)\nTotal: R$ 149,90\nEntrega prevista: 3 a 5 dias úteis\n\nVocê pode acompanhar o status na sua conta, na seção "Meus pedidos". Qualquer novidade, a gente avisa por aqui.\n\nObrigado por comprar com a gente.',
+    anexo:null, link:null,
+    verdict:'Mensagem legítima',
+    notas:[
+      {ok:true, t:'Endereço coerente', d:'O remetente é <b>pedidos@zappi.com.br</b>, o domínio da própria loja. Nada disfarçado depois do @.'},
+      {ok:true, t:'Pede apenas que você acompanhe', d:'Manda olhar "Meus pedidos" na sua conta — não há link de pagamento nem pedido de senha ou dado.'},
+      {ok:true, t:'Detalhes que batem', d:'Número do pedido, item, valor e prazo. É a confirmação que você esperaria depois de comprar de verdade.'}
+    ]
+  },
+  {
+    tipo:'phishing', remetente:'Posta Entregas', email:'aviso@rastreio-posta.info',
+    assunto:'Sua encomenda está retida — taxa pendente', data:'Hoje, 08:05',
+    corpo:'Prezado cliente,\n\nSua encomenda está RETIDA em nosso centro de triagem por falta de pagamento de uma taxa alfandegária de R$ 9,90.\n\nRegularize em até 24 horas ou o pacote será devolvido ao remetente.\n\n>> Pagar taxa e liberar entrega\n\nAtenciosamente,\nEquipe de Entregas',
+    anexo:null, link:'http://rastreio-posta.info/pagamento',
+    verdict:'Phishing',
+    notas:[
+      {ok:false, t:'Domínio que imita', d:'<b>rastreio-posta.info</b> não é o site da transportadora. O ".info" e o nome "colado" são tentativas de parecer oficial.'},
+      {ok:false, t:'Valor pequeno, de propósito', d:'R$ 9,90 é baixo o bastante para você pagar sem pensar — o objetivo é capturar os dados do seu cartão na página.'},
+      {ok:false, t:'Prazo e ameaça', d:'"Retida", "24 horas", "devolvido ao remetente": medo de perder a compra para você agir rápido.'},
+      {ok:false, t:'Link de pagamento por e-mail', d:'Cobrança real de entrega não chega assim. Confira sempre pelo rastreio oficial usando o código do seu pedido.'}
+    ]
+  },
+  {
+    tipo:'pretexting', remetente:'Central de Prevenção — Banco Lumiar', email:'atendimento@lumiar-prevencao.com',
+    assunto:'Detectamos um acesso e queremos te proteger', data:'Ontem, 19:40',
+    corpo:'Boa noite, Ana.\n\nAqui é da central de prevenção a fraudes do Banco Lumiar. Identificamos uma tentativa de acesso à sua conta de um aparelho desconhecido e bloqueamos por segurança.\n\nFique tranquila: já estamos resolvendo. Para confirmar que é você mesma e liberar a conta, vou te enviar um código por SMS agora. Assim que chegar, me responda com os números para concluirmos a verificação.\n\nEstou aqui para te ajudar. Obrigado pela colaboração.\nEquipe de Prevenção',
+    anexo:null, link:null,
+    verdict:'Pretexting',
+    notas:[
+      {ok:false, t:'Autoridade que acalma', d:'Diz ser a "prevenção a fraudes" e usa um tom protetor ("fique tranquila") para baixar sua guarda. É justamente o personagem que o golpista escolhe.'},
+      {ok:false, t:'Endereço fora do padrão', d:'<b>lumiar-prevencao.com</b> não é o domínio do banco. Um setor real escreveria do domínio oficial, não de um endereço novo.'},
+      {ok:false, t:'O pedido proibido', d:'Pedir que você "responda com os números" do SMS é o ponto-chave: o banco nunca pede o código de verificação. Quem tem o código, entra na conta.'},
+      {ok:false, t:'Sem pressa aparente — e isso engana', d:'Diferente do phishing, não há ameaça gritante. A calma é a estratégia: parece atendimento de verdade.'}
+    ]
+  },
+  {
+    tipo:'phishing', remetente:'Cinevo', email:'cobranca@cinevo-pagamentos.com',
+    assunto:'Não conseguimos renovar sua assinatura', data:'Hoje, 06:51',
+    corpo:'Olá,\n\nHouve um problema ao processar o pagamento da sua assinatura Cinevo e seu acesso será suspenso hoje.\n\nPara continuar assistindo sem interrupção, atualize os dados do seu cartão:\n\n>> Atualizar forma de pagamento\n\nSe os dados não forem atualizados, sua conta será cancelada automaticamente.',
+    anexo:null, link:'http://cinevo-pagamentos.com/conta',
+    verdict:'Phishing (com domínio parecido)',
+    notas:[
+      {ok:false, t:'Quase igual, mas não é', d:'O serviço usa <b>cinevo.com.br</b>. Aqui o domínio é <b>cinevo-pagamentos.com</b> — o nome certo grudado a uma palavra extra. É o truque mais comum e o mais fácil de passar batido.'},
+      {ok:false, t:'Suspensão "hoje"', d:'A pressa de perder o acesso no mesmo dia serve para você atualizar o cartão sem conferir o endereço.'},
+      {ok:false, t:'Pedido de dados de cartão por link', d:'Quando faltar pagamento de verdade, atualize sempre dentro do app oficial — nunca por um link recebido.'}
+    ]
+  }
+];
+
+/* ---------- 30 e-mails da simulação ---------- */
+const EMAILS = [
+  /* ===================== NORMAIS (10) ===================== */
+  {
+    id:'n1', tipo:'normal', remetente:'Mercô', email:'compras@merco.com.br',
+    assunto:'Recebemos seu pedido #M-90341', data:'Hoje, 11:48',
+    corpo:'Oi, Ana!\n\nSeu pedido foi confirmado e o pagamento aprovado.\n\nResumo:\n- Tênis de corrida (tam. 38) — R$ 259,90\n- Frete — grátis\n\nPrazo de entrega: 4 a 7 dias úteis. Você acompanha tudo em "Meus pedidos", dentro da sua conta. Avisaremos quando sair para entrega.\n\nAté logo!',
+    anexo:null, link:null, sinais:['nenhum']
+  },
+  {
+    id:'n2', tipo:'normal', remetente:'Posta Entregas', email:'rastreio@posta.com.br',
+    assunto:'Seu pacote saiu para entrega hoje', data:'Hoje, 07:32',
+    corpo:'Olá!\n\nBoa notícia: o objeto de código BR884512097PT saiu para entrega e deve chegar ainda hoje, no período da tarde.\n\nNão é preciso fazer nada agora. Se você não estiver em casa, o entregador deixa um aviso e tenta novamente no próximo dia útil.\n\nVocê pode acompanhar o trajeto pelo código acima no nosso site.\n\nEquipe Posta Entregas',
+    anexo:null, link:null, sinais:['nenhum']
+  },
+  {
+    id:'n3', tipo:'normal', remetente:'Clínica São Bento', email:'agenda@clinicasaobento.com.br',
+    assunto:'Lembrete: sua consulta é quinta, às 14h30', data:'Ontem, 16:10',
+    corpo:'Prezada Ana,\n\nPassando para lembrar da sua consulta:\n\nProfissional: Dra. Helena Marques (dermatologia)\nData: quinta-feira, 14h30\nLocal: unidade Centro, sala 4\n\nChegue com 10 minutos de antecedência e traga um documento com foto. Se precisar remarcar, é só responder este e-mail ou ligar para a recepção.\n\nAtenciosamente,\nClínica São Bento',
+    anexo:null, link:null, sinais:['nenhum']
+  },
+  {
+    id:'n4', tipo:'normal', remetente:'Cinevo', email:'novidades@cinevo.com.br',
+    assunto:'Novo episódio de "Litoral Norte" disponível', data:'Ter, 20:02',
+    corpo:'Oi!\n\nO episódio 5 da série que você estava acompanhando, "Litoral Norte", já está no ar.\n\nVocê parou no episódio 4, então é só continuar de onde estava. Boa sessão!\n\nSe não quiser mais receber avisos de novos episódios, dá para desativar nas preferências da sua conta.\n\nCinevo',
+    anexo:null, link:null, sinais:['nenhum']
+  },
+  {
+    id:'n5', tipo:'normal', remetente:'Faculdade Aurora', email:'secretaria@aurora.edu.br',
+    assunto:'Calendário do semestre e início das aulas', data:'Seg, 09:15',
+    corpo:'Olá, estudante,\n\nO calendário do próximo semestre já está publicado no portal do aluno. Alguns pontos importantes:\n\n- Início das aulas: 5 de agosto\n- Período de ajuste de matrícula: 1 a 4 de agosto\n- Recesso: 14 a 18 de outubro\n\nO calendário completo está disponível na área acadêmica do portal, com seu login de sempre. Em caso de dúvidas, a secretaria atende de segunda a sexta.\n\nBom semestre!',
+    anexo:null, link:null, sinais:['nenhum']
+  },
+  {
+    id:'n6', tipo:'normal', remetente:'Luz Norte', email:'avisos@luznorte.com.br',
+    assunto:'Manutenção programada no seu bairro', data:'Qua, 13:40',
+    corpo:'Comunicado aos moradores,\n\nNa próxima terça-feira, das 9h às 12h, faremos uma manutenção preventiva na rede elétrica da sua região. Durante esse período, o fornecimento pode ser interrompido.\n\nRecomendamos desligar aparelhos sensíveis antes do horário. Não é necessário entrar em contato nem fazer qualquer cadastro.\n\nQualquer imprevisto, o serviço pode ser concluído antes do previsto.\n\nLuz Norte — Distribuição',
+    anexo:null, link:null, sinais:['nenhum']
+  },
+  {
+    id:'n7', tipo:'normal', remetente:'Pousada Maré', email:'reservas@pousadamare.com.br',
+    assunto:'Reserva confirmada — 12 a 15 de setembro', data:'3 dias atrás',
+    corpo:'Olá, Ana!\n\nSua reserva está confirmada. Mal podemos esperar para receber você.\n\nCheck-in: 12/09, a partir das 14h\nCheck-out: 15/09, até as 12h\nQuarto: standard com vista para o jardim\nCafé da manhã incluso\n\nO pagamento será feito no balcão, na chegada. Se o horário de check-in mudar, é só nos avisar respondendo aqui.\n\nBoa viagem!\nPousada Maré',
+    anexo:null, link:null, sinais:['nenhum']
+  },
+  {
+    id:'n8', tipo:'normal', remetente:'Toca', email:'semana@toca.fm',
+    assunto:'Seu resumo da semana chegou', data:'Seg, 08:00',
+    corpo:'Oi!\n\nSua semana em música: você ouviu 6h20 e descobriu 14 faixas novas. O artista mais tocado foi Marina Sá, e o gênero da vez foi MPB.\n\nMontamos uma seleção com músicas parecidas com o que você andou ouvindo. Ela aparece na sua biblioteca, em "Descobertas da semana".\n\nBoa audição!\nToca',
+    anexo:null, link:null, sinais:['nenhum']
+  },
+  {
+    id:'n9', tipo:'normal', remetente:'JáComi', email:'pedidos@jacomi.com.br',
+    assunto:'Seu pedido está a caminho', data:'Hoje, 20:37',
+    corpo:'Boa noite!\n\nO restaurante Cantina do Léo já preparou seu pedido e o entregador está indo até você.\n\nPedido: 1 lasanha à bolonhesa + 1 suco de laranja\nTempo estimado: 25 a 35 minutos\n\nVocê pode acompanhar a entrega em tempo real pelo aplicativo. Bom apetite!\n\nJáComi',
+    anexo:null, link:null, sinais:['nenhum']
+  },
+  {
+    id:'n10', tipo:'normal', remetente:'Amplia', email:'notificacoes@amplia.com.br',
+    assunto:'Rafael comentou na sua foto', data:'Ontem, 21:18',
+    corpo:'Oi, Ana!\n\nVocê tem uma nova interação:\n\nRafael Lima comentou na sua publicação de domingo: "que lugar lindo, preciso ir!"\n\nVocê pode ver e responder o comentário direto no aplicativo. Para reduzir esse tipo de aviso, ajuste suas notificações nas configurações.\n\nAmplia',
+    anexo:null, link:null, sinais:['nenhum']
+  },
+
+  /* ===================== PHISHING (10) ===================== */
+  {
+    id:'p1', tipo:'phishing', remetente:'Banco Lumiar', email:'alerta@banco-lumiar.seguranca-online.net',
+    assunto:'Movimentação não reconhecida na sua conta', data:'Hoje, 09:03',
+    corpo:'Prezado cliente,\n\nDetectamos uma compra de R$ 1.299,90 que pode não ter sido feita por você. Por segurança, parte da sua conta foi limitada.\n\nSe você não reconhece essa transação, confirme seus dados nos próximos 30 minutos para reverter a cobrança e desbloquear o acesso.\n\n>> Confirmar meus dados e cancelar a compra\n\nApós esse prazo, a contestação não poderá mais ser feita por este canal.',
+    anexo:null, link:'http://banco-lumiar.seguranca-online.net/confirmar', sinais:['medo','urgencia','dominio','link','confidencial']
+  },
+  {
+    id:'p2', tipo:'phishing', remetente:'Posta Entregas', email:'entregas@posta-rastreamento.info',
+    assunto:'Endereço incompleto: seu pacote não pôde ser entregue', data:'Hoje, 10:12',
+    corpo:'Olá,\n\nTentamos entregar sua encomenda, mas o endereço cadastrado está incompleto. Para evitar a devolução, atualize os dados de entrega.\n\n>> Atualizar endereço de entrega\n\nO pacote ficará retido por 48 horas aguardando a correção.',
+    anexo:null, link:'http://posta-rastreamento.info/atualizar', sinais:['urgencia','dominio','link','confidencial']
+  },
+  {
+    id:'p3', tipo:'phishing', remetente:'Telinha', email:'conta@telinha-pagamentos.com',
+    assunto:'Falha no pagamento da sua assinatura', data:'Hoje, 05:46',
+    corpo:'Olá,\n\nNão conseguimos renovar sua assinatura e seu acesso será pausado nas próximas horas.\n\nAtualize sua forma de pagamento para não perder seus títulos e sua lista:\n\n>> Reativar minha conta\n\nSe não fizer isso hoje, a conta será encerrada e o histórico apagado.',
+    anexo:null, link:'http://telinha-pagamentos.com/reativar', sinais:['urgencia','medo','dominio','link']
+  },
+  {
+    id:'p4', tipo:'phishing', remetente:'Zappi Premiados', email:'premios@zappi-promo.top',
+    assunto:'Você foi sorteado! Falta pouco para receber', data:'Ontem, 14:55',
+    corpo:'Parabéns!\n\nSeu CPF foi sorteado na promoção de aniversário e você tem um prêmio de R$ 500 em compras esperando.\n\nO resgate é simples e rápido, mas o prêmio expira em 24 horas:\n\n>> Resgatar meu prêmio agora\n\nNão perca essa chance, são poucos os contemplados.',
+    anexo:null, link:'http://zappi-promo.top/resgate', sinais:['curiosidade','urgencia','dominio','link']
+  },
+  {
+    id:'p5', tipo:'phishing', remetente:'Departamento de Trânsito', email:'notificacao@multas-aviso.online',
+    assunto:'Notificação de infração — pagamento pendente', data:'Seg, 08:21',
+    corpo:'Prezado condutor,\n\nConsta em nosso sistema uma infração de trânsito não quitada vinculada ao seu CPF. O valor com desconto de 40% vence hoje.\n\nO detalhamento da autuação está no documento em anexo. Para quitar com desconto, siga as instruções no arquivo.\n\nA não regularização pode gerar pontos na carteira e encaminhamento para cobrança.',
+    anexo:{nome:'notificacao_infracao.pdf', tipo:'PDF · 96 KB'}, link:null, sinais:['medo','urgencia','anexo','dominio']
+  },
+  {
+    id:'p6', tipo:'phishing', remetente:'Pago', email:'seguranca@pago-verificacao.net',
+    assunto:'Sua carteira foi temporariamente bloqueada', data:'Hoje, 12:09',
+    corpo:'Identificamos acessos incomuns e bloqueamos sua carteira por segurança.\n\nPara reativar, confirme sua identidade e cadastre uma nova senha de acesso:\n\n>> Desbloquear minha carteira\n\nEnquanto não confirmar, seu saldo ficará indisponível para saques e transferências.',
+    anexo:null, link:'http://pago-verificacao.net/desbloquear', sinais:['medo','urgencia','dominio','link','senha']
+  },
+  {
+    id:'p7', tipo:'phishing', remetente:'Amplia', email:'suporte@amplia-contas.net',
+    assunto:'Novo acesso detectado — foi você?', data:'Ontem, 23:41',
+    corpo:'Detectamos um login na sua conta a partir de um aparelho desconhecido, em outra cidade.\n\nSe não foi você, sua senha pode ter vazado. Redefina agora para proteger seu perfil:\n\n>> Redefinir minha senha\n\nIgnorar este aviso pode permitir que terceiros publiquem em seu nome.',
+    anexo:null, link:'http://amplia-contas.net/redefinir', sinais:['medo','dominio','link','senha']
+  },
+  {
+    id:'p8', tipo:'phishing', remetente:'Mercô Ofertas', email:'cupom@merco-vantagens.info',
+    assunto:'Seu cupom de R$ 200 está liberado', data:'Qua, 17:28',
+    corpo:'Oi!\n\nVocê tem um cupom exclusivo de R$ 200 para usar em qualquer compra acima de R$ 250. Mas corre: ele vale só até a meia-noite de hoje.\n\n>> Ativar meu cupom\n\nÉ rápido: ative, escolha seus produtos e o desconto aparece no carrinho.',
+    anexo:null, link:'http://merco-vantagens.info/cupom', sinais:['curiosidade','urgencia','dominio','link']
+  },
+  {
+    id:'p9', tipo:'phishing', remetente:'Cobrança Digital', email:'financeiro@fatura-online.info',
+    assunto:'Comprovante da sua fatura de junho', data:'Hoje, 06:18',
+    corpo:'Olá,\n\nSegue em anexo o comprovante referente à fatura deste mês, no valor de R$ 134,70.\n\nCaso já tenha efetuado o pagamento, desconsidere. Em caso de divergência, abra o documento para conferir os detalhes do débito.\n\nAtenciosamente,\nSetor de Cobrança',
+    anexo:{nome:'comprovante_junho.pdf', tipo:'PDF · 72 KB'}, link:null, sinais:['anexo','dominio','inconsistencia']
+  },
+  {
+    id:'p10', tipo:'phishing', remetente:'Vagas Selecionadas', email:'rh@vagas-selecao.net',
+    assunto:'Sua candidatura foi aprovada na primeira etapa', data:'Ter, 10:47',
+    corpo:'Olá,\n\nVocê foi pré-selecionado para uma vaga com início imediato e salário acima da média. Para garantir sua participação na próxima fase, preencha o cadastro completo com seus dados:\n\n>> Concluir meu cadastro\n\nAs vagas são limitadas e preenchidas por ordem de confirmação.',
+    anexo:null, link:'http://vagas-selecao.net/cadastro', sinais:['curiosidade','urgencia','dominio','link','confidencial']
+  },
+
+  /* ===================== PRETEXTING (10) ===================== */
+  {
+    id:'x1', tipo:'pretexting', remetente:'Onda Móvel — Suporte', email:'atendimento@ondamovel-suporte.com',
+    assunto:'Sobre a instabilidade no seu sinal', data:'Hoje, 15:22',
+    corpo:'Olá, Ana, tudo bem?\n\nAqui é o Bruno, do suporte técnico da Onda Móvel. Vi no sistema que sua linha apresentou quedas de sinal nos últimos dias e quero resolver isso para você ainda hoje.\n\nJá iniciei uma atualização remota na sua linha. Para concluir, vou enviar um código de confirmação por SMS. Quando ele chegar, me responda com o número para eu liberar a atualização do seu aparelho.\n\nFico no aguardo, qualquer coisa estou por aqui.\nBruno — Suporte Onda Móvel',
+    anexo:null, link:null, sinais:['confianca','autoridade','codigo']
+  },
+  {
+    id:'x2', tipo:'pretexting', remetente:'Tia Lúcia', email:'lucia.contato2025@email-pessoal.com',
+    assunto:'Mudei de número, me ajuda?', data:'Hoje, 18:54',
+    corpo:'Oi, querida! Sou eu, a tia Lúcia. Troquei de celular e perdi todos os contatos, esse é meu e-mail novo.\n\nEstou num aperto aqui e não consigo resolver pelo meu banco agora. Você consegue me fazer um Pix de R$ 480? Assim que eu resolver, te devolvo certinho ainda esta semana.\n\nNão comenta com sua mãe pra ela não ficar preocupada à toa, tá? Depois te explico tudo. Beijos!',
+    anexo:null, link:null, sinais:['confianca','inconsistencia','urgencia']
+  },
+  {
+    id:'x3', tipo:'pretexting', remetente:'Banco Lumiar', email:'relacionamento@lumiar-atendimento.com',
+    assunto:'Confirmação de segurança da sua conta', data:'Ontem, 11:30',
+    corpo:'Prezada Ana,\n\nComo parte da nossa rotina de proteção, precisamos validar alguns acessos recentes à sua conta.\n\nVamos te ligar nos próximos minutos pelo número da central. Durante a ligação, nosso atendente pedirá o código que enviaremos por SMS, apenas para confirmar que é você quem está do outro lado.\n\nPedimos que tenha o código em mãos para agilizar o atendimento.\n\nAtenciosamente,\nRelacionamento Banco Lumiar',
+    anexo:null, link:null, sinais:['autoridade','codigo','confianca','inconsistencia']
+  },
+  {
+    id:'x4', tipo:'pretexting', remetente:'Entregas Mira', email:'reentrega@entregasmira-clientes.com',
+    assunto:'Não conseguimos concluir sua entrega', data:'Hoje, 13:07',
+    corpo:'Olá,\n\nNosso entregador esteve no endereço hoje pela manhã, mas não havia ninguém para receber o pacote.\n\nPara reagendar sem custo, precisamos apenas confirmar alguns dados de quem vai receber: nome completo, CPF e a data de nascimento, por questão de identificação na entrega.\n\nÉ só responder este e-mail com as informações e escolhemos juntos o melhor dia. Obrigado pela compreensão.\n\nEntregas Mira',
+    anexo:null, link:null, sinais:['confianca','confidencial','inconsistencia']
+  },
+  {
+    id:'x5', tipo:'pretexting', remetente:'Prevenção a Fraudes', email:'prevencao@seguranca-lumiar.com',
+    assunto:'Estamos te protegendo de uma tentativa de golpe', data:'Hoje, 16:44',
+    corpo:'Boa tarde, Ana.\n\nAqui é da equipe de prevenção a fraudes. Identificamos que tentaram usar seus dados para abrir um crédito em seu nome e bloqueamos a tentativa a tempo.\n\nPara garantir que ninguém mais tenha acesso, vamos criar com você uma senha temporária de proteção. Me informe a senha atual da sua conta para que eu possa substituí-la por uma nova e segura.\n\nPode ficar tranquila, estamos cuidando de tudo.\nEquipe de Prevenção',
+    anexo:null, link:null, sinais:['autoridade','confianca','senha','medo']
+  },
+  {
+    id:'x6', tipo:'pretexting', remetente:'Clube de Vantagens', email:'relacionamento@clube-pontos.com',
+    assunto:'Seus pontos estão prestes a virar benefícios', data:'Ter, 09:58',
+    corpo:'Olá, Ana!\n\nVocê acumulou pontos suficientes para entrar no nosso programa de vantagens exclusivo, com descontos e brindes selecionados para você.\n\nA ativação é gratuita. Para liberar seu cadastro premium, só precisamos confirmar alguns dados: CPF completo, número do cartão e a data de validade. É uma formalidade rápida para vincular os benefícios ao seu nome.\n\nResponda quando puder e ative suas vantagens.\nClube de Vantagens',
+    anexo:null, link:null, sinais:['confianca','curiosidade','confidencial']
+  },
+  {
+    id:'x7', tipo:'pretexting', remetente:'Central do Cidadão', email:'cadastro@servicos-cidadao.org',
+    assunto:'Atualização cadastral necessária para manter seu benefício', data:'Qui, 10:15',
+    corpo:'Prezado(a),\n\nNossos registros indicam que seu cadastro está desatualizado. Para continuar recebendo seus benefícios sem interrupção, é necessário confirmar seus dados pessoais até o fim do mês.\n\nResponda este e-mail informando nome completo, CPF, número de identidade e endereço atual. A atualização é simples e evita o cancelamento automático.\n\nAgradecemos sua colaboração.\nCentral de Atendimento ao Cidadão',
+    anexo:null, link:null, sinais:['autoridade','confidencial','inconsistencia']
+  },
+  {
+    id:'x8', tipo:'pretexting', remetente:'Camila — Recrutamento', email:'camila.rh@talentos-selecao.com',
+    assunto:'Continuação do seu processo seletivo', data:'Ontem, 15:33',
+    corpo:'Oi, Ana, tudo bem?\n\nFoi um prazer conversar com você na etapa anterior. Gostamos muito do seu perfil e queremos seguir com a contratação.\n\nPara dar entrada na documentação, preciso que você me envie cópia do RG, CPF e comprovante de residência. Há também uma taxa de R$ 89 referente ao exame admissional e à confecção do crachá, que costuma ser adiantada pelo candidato e depois reembolsada na folha.\n\nAssim que recebermos, marcamos seu primeiro dia. Estou na torcida!\nCamila',
+    anexo:null, link:null, sinais:['confianca','autoridade','confidencial']
+  },
+  {
+    id:'x9', tipo:'pretexting', remetente:'Banco Lumiar', email:'verificacao@bancolumiar.com.br',
+    assunto:'Confirmação de identidade pendente', data:'Hoje, 14:02',
+    corpo:'Olá, Ana.\n\nRegistramos uma solicitação de atualização cadastral feita em sua conta. Se foi você, não precisa fazer nada.\n\nSe não reconhece, podemos cancelar agora mesmo: enviamos um código de verificação ao seu celular e, para validar o cancelamento, basta nos responder com esse código.\n\nEstamos à disposição para garantir a segurança da sua conta.\nBanco Lumiar',
+    anexo:null, link:null, sinais:['autoridade','codigo','inconsistencia']
+  },
+  {
+    id:'x10', tipo:'pretexting', remetente:'Instituto Semear', email:'doacoes@institutosemear-contato.org',
+    assunto:'Obrigado por apoiar nossa causa novamente', data:'Seg, 19:09',
+    corpo:'Querida Ana,\n\nFoi a sua doação do ano passado que ajudou a manter nosso projeto de leitura para crianças. De coração, muito obrigado.\n\nEstamos abrindo uma nova campanha e seria maravilhoso contar com você de novo. Para facilitar, já podemos repetir a contribuição usando os mesmos dados: você só precisa confirmar o número do cartão e o código de segurança que estão com você.\n\nQualquer valor faz diferença. Conte conosco e obrigado por tanto!\nInstituto Semear',
+    anexo:null, link:null, sinais:['confianca','confidencial']
+  }
+];
+/* =====================================================================
+   ESTADO E PERSISTÊNCIA
+   ===================================================================== */
+const STORE_KEY = 'es_treinamento_v1';
+const PTS_TIPO = 2, PTS_SINAIS = 3, MAX_EMAIL = 5;
+const MAX_TOTAL = EMAILS.length * MAX_EMAIL;
+
+const defaultState = () => ({
+  nome:'',
+  conceitualVisto:false,
+  quiz:{ respostas:{}, acertos:0, concluido:false },
+  sim:{ respostas:{}, pontuacao:0 }   // respostas[id] = {tipo, sinais, correto, pontos, ptsSinais}
+});
+let state = carregar();
+
+function carregar(){
+  try{ const raw = localStorage.getItem(STORE_KEY); if(raw){ return Object.assign(defaultState(), JSON.parse(raw)); } }
+  catch(e){}
+  return defaultState();
+}
+function salvar(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){} }
+
+/* =====================================================================
+   NAVEGAÇÃO
+   ===================================================================== */
+const VIEWS = ['inicio','conceitual','pratico','simulacao','resultado'];
+let viewAtual = 'inicio';
+
+function go(view){
+  if(!VIEWS.includes(view)) return;
+  viewAtual = view;
+  VIEWS.forEach(v=>{
+    document.getElementById('view-'+v).classList.toggle('active', v===view);
+  });
+  document.querySelectorAll('#nav button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.go===view);
+  });
+  window.scrollTo({top:0, behavior:'smooth'});
+  if(view==='conceitual'){ state.conceitualVisto = true; salvar(); }
+  if(view==='resultado'){ renderResultado(); }
+  if(view==='simulacao'){ atualizarRibbon(); }
+}
+document.getElementById('nav').addEventListener('click', e=>{
+  const b = e.target.closest('button[data-go]');
+  if(b) go(b.dataset.go);
+});
+
+/* =====================================================================
+   UTILITÁRIOS
+   ===================================================================== */
+function el(html){ const t=document.createElement('template'); t.innerHTML=html.trim(); return t.content.firstElementChild; }
+function escAttr(s){ return String(s).replace(/"/g,'&quot;'); }
+function iniciais(nome){ const p=nome.trim().split(/\s+/); return ((p[0]?.[0]||'')+(p[1]?.[0]||p[0]?.[1]||'')).toUpperCase(); }
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2400);
+}
+function bodyHTML(corpo, link){
+  let html = corpo.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  if(link){
+    // troca o marcador ">> Texto" por um link visual fictício (não navegável)
+    html = html.replace(/&gt;&gt;\s*(.+)/g, (m,txt)=>
+      `<a class="mlink" href="#" onclick="return false" title="${escAttr(link)}">${txt.trim()} — ${escAttr(link)}</a>`);
+  }
+  return html;
+}
+
+/* =====================================================================
+   QUIZ CONCEITUAL
+   ===================================================================== */
+function renderQuiz(){
+  const box = document.getElementById('quiz');
+  if(!box) return;
+  box.innerHTML='';
+  QUIZ.forEach((item, qi)=>{
+    const respondida = state.quiz.respostas[qi] !== undefined;
+    const escolhida = state.quiz.respostas[qi];
+    const card = el(`<div class="quiz-q ${respondida?'answered':''}">
+      <h4><span class="qn">${qi+1}.</span><span>${item.q}</span></h4>
+      <div class="opts"></div>
+      <div class="feedback ${respondida?(escolhida===item.c?'ok show':'no show'):''}"></div>
+    </div>`);
+    const opts = card.querySelector('.opts');
+    item.o.forEach((op, oi)=>{
+      let cls='opt';
+      if(respondida){
+        cls+=' disabled';
+        if(oi===item.c) cls+=' correct';
+        else if(oi===escolhida) cls+=' wrong';
+      }
+      const o = el(`<label class="${cls}">
+        <input type="radio" name="q${qi}" ${oi===escolhida?'checked':''} ${respondida?'disabled':''}>
+        <span>${op}</span></label>`);
+      o.querySelector('input').addEventListener('change', ()=>responderQuiz(qi, oi));
+      opts.appendChild(o);
+    });
+    if(respondida){
+      const fb = card.querySelector('.feedback');
+      const acertou = escolhida===item.c;
+      fb.innerHTML = `<b>${acertou?'Resposta correta':'Resposta incorreta'}</b>${item.e}`;
+    }
+    box.appendChild(card);
+  });
+  atualizarResultadoQuiz();
+}
+
+function responderQuiz(qi, oi){
+  if(state.quiz.respostas[qi]!==undefined) return;
+  state.quiz.respostas[qi]=oi;
+  state.quiz.acertos = Object.keys(state.quiz.respostas).filter(k=>state.quiz.respostas[k]===QUIZ[k].c).length;
+  if(Object.keys(state.quiz.respostas).length===QUIZ.length) state.quiz.concluido=true;
+  salvar();
+  renderQuiz();
+}
+
+function atualizarResultadoQuiz(){
+  const box = document.getElementById('quizResult');
+  if(!box) return;
+  if(!state.quiz.concluido){ box.classList.remove('show'); return; }
+  const total = QUIZ.length, acertos = state.quiz.acertos;
+  const pct = Math.round(acertos/total*100);
+  document.getElementById('quizScore').textContent = `${acertos}/${total}`;
+  let msg;
+  if(pct>=84) msg='Você pegou bem a ideia. Pode seguir para a prática com confiança.';
+  else if(pct>=50) msg='No caminho certo. Vale reler os pontos que escaparam antes de continuar.';
+  else msg='Sem problema: releia o conteúdo acima e refaça o quiz. A ideia vai assentar.';
+  document.getElementById('quizMsg').textContent = `${pct}% de acerto — ${msg}`;
+  box.classList.add('show');
+}
+
+function refazerQuiz(){
+  state.quiz = { respostas:{}, acertos:0, concluido:false };
+  salvar(); renderQuiz();
+  const v = document.getElementById('view-conceitual').querySelector('#quiz');
+  if(v) v.scrollIntoView({behavior:'smooth', block:'start'});
+}
+/* =====================================================================
+   MÓDULO PRÁTICO — exemplos comentados
+   ===================================================================== */
+function renderExemploList(){
+  const list = document.getElementById('exemploList');
+  list.innerHTML='';
+  EXEMPLOS.forEach((m, i)=>{
+    const tagCls = m.tipo==='normal'?'ok':(m.tipo==='phishing'?'no':'att');
+    const item = el(`<div class="mail-item" data-i="${i}">
+      <div class="mail-item__dot"></div>
+      <div class="mail-item__body">
+        <div class="mail-item__top"><span class="mail-item__from">${m.remetente}</span><span class="mail-item__time">${m.data}</span></div>
+        <div class="mail-item__subj">${m.assunto}</div>
+        <div class="mail-item__prev">${m.email}</div>
+        <div class="mail-item__tags"><span class="tag-mini ${tagCls}">${TIPOS[m.tipo]}</span></div>
+      </div></div>`);
+    item.addEventListener('click', ()=>abrirExemplo(i));
+    list.appendChild(item);
+  });
+}
+
+function abrirExemplo(i){
+  document.querySelectorAll('#exemploList .mail-item').forEach(x=>x.classList.toggle('sel', +x.dataset.i===i));
+  const m = EXEMPLOS[i];
+  const read = document.getElementById('exemploRead');
+  const anexo = m.anexo ? `<div class="attach"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 17a5 5 0 0 1-7-7l9-9a3.5 3.5 0 0 1 5 5l-9 9a2 2 0 0 1-3-3l8-8"/></svg><div><b>${m.anexo.nome}</b><br><span>${m.anexo.tipo}</span></div></div>` : '';
+  const notas = m.notas.map(n=>`<div class="annot-item"><span class="annot-badge ${n.ok?'ok':''}">${n.ok?'Seguro':'Atenção'}</span><p><b>${n.t}.</b> ${n.d}</p></div>`).join('');
+  read.innerHTML = `
+    <div class="mail-read__subj">${m.assunto}</div>
+    <div class="mail-read__from">
+      <div class="avatar">${iniciais(m.remetente)}</div>
+      <div class="mail-read__meta"><b>${m.remetente}</b><div class="mail-read__addr">${m.email}</div></div>
+      <div class="mail-read__date">${m.data}</div>
+    </div>
+    <div class="mail-body">${bodyHTML(m.corpo, m.link)}</div>
+    ${anexo}
+    <div class="reply-fake"><button class="btn" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17 4 12l5-5"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>Responder</button></div>
+    <div class="annot">
+      <span class="verdict ${m.tipo}">${m.tipo==='normal'?'✓ '+m.verdict:'⚠ '+m.verdict}</span>
+      <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>O que olhar nesta mensagem</h4>
+      ${notas}
+    </div>`;
+  read.scrollTop=0;
+}
+
+/* =====================================================================
+   SIMULAÇÃO — lista, leitura, análise e pontuação
+   ===================================================================== */
+let simSel = null;
+
+function renderSimList(){
+  const list = document.getElementById('simList');
+  list.innerHTML='';
+  EMAILS.forEach(m=>{
+    const r = state.sim.respostas[m.id];
+    const done = !!r;
+    const tag = done ? `<span class="tag-mini ${r.correto?'ok':'no'}">${r.correto?'Acertou':'Errou'}</span>` : '';
+    const item = el(`<div class="mail-item ${done?'done':''} ${simSel===m.id?'sel':''}" data-id="${m.id}">
+      <div class="mail-item__dot"></div>
+      <div class="mail-item__body">
+        <div class="mail-item__top"><span class="mail-item__from">${m.remetente}</span><span class="mail-item__time">${m.data}</span></div>
+        <div class="mail-item__subj">${m.assunto}</div>
+        <div class="mail-item__prev">${m.email}</div>
+        ${done?`<div class="mail-item__tags">${tag}</div>`:''}
+      </div></div>`);
+    item.addEventListener('click', ()=>abrirSim(m.id));
+    list.appendChild(item);
+  });
+}
+
+function abrirSim(id){
+  simSel = id;
+  document.querySelectorAll('#simList .mail-item').forEach(x=>x.classList.toggle('sel', x.dataset.id===id));
+  const m = EMAILS.find(e=>e.id===id);
+  const r = state.sim.respostas[id];
+  const read = document.getElementById('simRead');
+  const anexo = m.anexo ? `<div class="attach"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 17a5 5 0 0 1-7-7l9-9a3.5 3.5 0 0 1 5 5l-9 9a2 2 0 0 1-3-3l8-8"/></svg><div><b>${m.anexo.nome}</b><br><span>${m.anexo.tipo}</span></div></div>` : '';
+
+  let analiseHTML;
+  if(r){
+    analiseHTML = montarFeedback(m, r);
+  } else {
+    const tipoOpts = ['normal','phishing','pretexting'].map(t=>`
+      <label class="type-opt" data-tipo="${t}"><input type="radio" name="tipo-${id}" value="${t}"><span>${TIPOS[t]}</span></label>`).join('');
+    const sigOpts = Object.keys(SINAIS).map(k=>`
+      <label class="sig" data-sig="${k}"><input type="checkbox" value="${k}"><span>${SINAIS[k]}</span></label>`).join('');
+    analiseHTML = `
+      <div class="analysis">
+        <h4>1. Como você classifica esta mensagem?</h4>
+        <p class="hint">Escolha uma opção.</p>
+        <div class="type-opts" id="typeOpts-${id}">${tipoOpts}</div>
+        <h4>2. Quais sinais você percebe?</h4>
+        <p class="hint">Marque todos que se aplicam. Se a mensagem for legítima, marque "Não há sinais suspeitos".</p>
+        <div class="sig-grid" id="sigGrid-${id}">${sigOpts}</div>
+        <div class="btn-row">
+          <button class="btn btn--primary" onclick="confirmarAnalise('${id}')">Confirmar análise</button>
+          <button class="btn" onclick="proximoEmail()">Próxima mensagem</button>
+        </div>
+      </div>`;
+  }
+
+  read.innerHTML = `
+    <div class="mail-read__subj">${m.assunto}</div>
+    <div class="mail-read__from">
+      <div class="avatar">${iniciais(m.remetente)}</div>
+      <div class="mail-read__meta"><b>${m.remetente}</b><div class="mail-read__addr">${m.email}</div></div>
+      <div class="mail-read__date">${m.data}</div>
+    </div>
+    <div class="mail-body">${bodyHTML(m.corpo, m.link)}</div>
+    ${anexo}
+    <div class="reply-fake"><button class="btn" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17 4 12l5-5"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>Responder</button></div>
+    ${analiseHTML}`;
+  read.scrollTop=0;
+
+  // interações
+  if(!r){
+    read.querySelectorAll(`#typeOpts-${id} .type-opt`).forEach(o=>{
+      o.addEventListener('click', ()=>{
+        read.querySelectorAll(`#typeOpts-${id} .type-opt`).forEach(x=>x.classList.remove('pick'));
+        o.classList.add('pick'); o.querySelector('input').checked=true;
+      });
+    });
+    read.querySelectorAll(`#sigGrid-${id} .sig`).forEach(o=>{
+      const inp=o.querySelector('input');
+      o.addEventListener('click', e=>{
+        if(e.target!==inp) inp.checked=!inp.checked;
+        o.classList.toggle('pick', inp.checked);
+      });
+    });
+  }
+}
+
+/* ---------- Pontuação dos sinais ---------- */
+function pontuarSinais(verdadeiros, selecionados){
+  if(verdadeiros.includes('nenhum')){
+    const marcouNenhum = selecionados.includes('nenhum');
+    const marcouSuspeito = selecionados.filter(s=>s!=='nenhum').length;
+    if(marcouNenhum && marcouSuspeito===0) return PTS_SINAIS;     // perfeito
+    if(marcouNenhum && marcouSuspeito>0)  return 1;               // certo, mas com ruído
+    return 0;                                                     // não reconheceu a ausência de sinais
+  }
+  const verd = verdadeiros.filter(s=>s!=='nenhum');
+  const acertos = selecionados.filter(s=>verd.includes(s)).length;
+  const erros   = selecionados.filter(s=>!verd.includes(s)).length; // inclui marcar "nenhum" indevidamente
+  const ratio = (acertos - erros) / verd.length;
+  return Math.max(0, Math.min(PTS_SINAIS, Math.round(ratio * PTS_SINAIS)));
+}
+
+function confirmarAnalise(id){
+  const read = document.getElementById('simRead');
+  const tipoSel = read.querySelector(`#typeOpts-${id} input:checked`);
+  if(!tipoSel){ toast('Escolha como você classifica a mensagem.'); return; }
+  const m = EMAILS.find(e=>e.id===id);
+  const tipo = tipoSel.value;
+  const sinaisSel = [...read.querySelectorAll(`#sigGrid-${id} input:checked`)].map(i=>i.value);
+
+  const tipoCorreto = tipo===m.tipo;
+  const ptsTipo = tipoCorreto ? PTS_TIPO : 0;
+  const ptsSinais = pontuarSinais(m.sinais, sinaisSel);
+  const pontos = ptsTipo + ptsSinais;
+
+  state.sim.respostas[id] = { tipo, sinais:sinaisSel, correto:tipoCorreto, pontos, ptsSinais };
+  state.sim.pontuacao = Object.values(state.sim.respostas).reduce((a,r)=>a+r.pontos,0);
+  salvar();
+
+  renderSimList();
+  abrirSim(id);          // reabre mostrando o feedback
+  atualizarRibbon();
+  toast(`+${pontos} ponto${pontos===1?'':'s'} nesta análise`);
+}
+
+function montarFeedback(m, r){
+  const ok = r.correto;
+  const verd = m.sinais;
+  const tagSinais = verd.map(s=>{
+    const acertou = r.sinais.includes(s);
+    return `<span class="st ${acertou?'hit':'miss'}">${acertou?'✓':'•'} ${SINAIS[s]}</span>`;
+  }).join('');
+  const marcadosErrados = r.sinais.filter(s=>!verd.includes(s));
+  const errExtra = marcadosErrados.length
+    ? `<p>Você também marcou sinais que não se aplicam aqui: ${marcadosErrados.map(s=>SINAIS[s]).join(', ')}.</p>` : '';
+  const explic = explicacaoTipo(m);
+  return `
+    <div class="analysis">
+      <div class="efb ${ok?'ok':'no'} show">
+        <div class="efb__head">
+          ${ok
+            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
+            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>'}
+          ${ok ? 'Classificação correta' : 'Classificação incorreta'} — você marcou "${TIPOS[r.tipo]}"
+        </div>
+        <p>${ok ? 'Esta mensagem é mesmo do tipo' : 'Na verdade, esta mensagem é do tipo'} <b>${TIPOS[m.tipo]}</b>. ${explic}</p>
+        <p><b>Sinais que valia identificar:</b></p>
+        <div class="sig-tags">${tagSinais}</div>
+        ${errExtra}
+        <p style="margin-top:10px">Pontuação desta análise: <span class="pts">${r.pontos} / ${MAX_EMAIL}</span> &nbsp;·&nbsp; tipo ${r.correto?PTS_TIPO:0}/${PTS_TIPO}, sinais ${r.ptsSinais}/${PTS_SINAIS}</p>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn--primary" onclick="proximoEmail()">Próxima mensagem
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        ${analisados()===EMAILS.length?'<button class="btn btn--navy" onclick="go(\'resultado\')">Ver resultado final</button>':''}
+      </div>
+    </div>`;
+}
+
+function explicacaoTipo(m){
+  if(m.tipo==='normal') return 'É uma mensagem legítima do dia a dia: o endereço bate com o serviço, o tom é tranquilo e não há pedido de senha, código, dados ou ação urgente.';
+  if(m.tipo==='phishing') return 'É phishing: disparado em massa, usa pressa, medo ou uma oferta tentadora, com domínio que imita o original e um link ou anexo para te fazer agir no impulso.';
+  return 'É pretexting: monta uma história crível, apoiada em confiança ou autoridade (suporte, banco, um conhecido, um recrutador), para conseguir um dado, um código ou um favor sem levantar suspeita.';
+}
+
+function proximoEmail(){
+  const idx = EMAILS.findIndex(e=>e.id===simSel);
+  for(let k=1;k<=EMAILS.length;k++){
+    const cand = EMAILS[(idx+k)%EMAILS.length];
+    if(!state.sim.respostas[cand.id]){ abrirSim(cand.id); return; }
+  }
+  toast('Todas as mensagens foram analisadas.');
+  go('resultado');
+}
+
+function analisados(){ return Object.keys(state.sim.respostas).length; }
+
+function atualizarRibbon(){
+  const feitos = analisados(), total = EMAILS.length;
+  const pct = Math.round(feitos/total*100);
+  document.getElementById('simFill').style.width = pct+'%';
+  document.getElementById('simProgressTxt').textContent = `${feitos} de ${total} analisados`;
+  document.getElementById('simPctTxt').textContent = pct+'%';
+  document.getElementById('simScore').textContent = state.sim.pontuacao;
+  document.getElementById('simMax').textContent = MAX_TOTAL;
+  document.getElementById('simAnalyzedTxt').textContent = `${feitos}/${total}`;
+}
+
+function reiniciarSim(){
+  if(!confirm('Recomeçar a simulação apaga todas as suas análises e a pontuação. Deseja continuar?')) return;
+  state.sim = { respostas:{}, pontuacao:0 };
+  simSel = null; salvar();
+  renderSimList(); atualizarRibbon();
+  document.getElementById('simRead').innerHTML =
+    `<div class="mail-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H4z"/><path d="M4 9h4l2 3h4l2-3h4"/></svg>Simulação reiniciada. Abra uma mensagem para começar.</div>`;
+  toast('Simulação reiniciada.');
+}
+/* =====================================================================
+   RESULTADO FINAL
+   ===================================================================== */
+function renderResultado(){
+  const box = document.getElementById('resultContent');
+  const feitos = analisados();
+  if(feitos===0){
+    box.innerHTML = `<h1>Resultado</h1>
+      <div class="card" style="text-align:center;padding:36px">
+        <p class="lead" style="margin:0 auto 16px">Você ainda não analisou nenhuma mensagem. Conclua a simulação para ver seu desempenho e emitir o certificado.</p>
+        <button class="btn btn--primary" onclick="go('simulacao')">Ir para a simulação</button>
+      </div>`;
+    document.getElementById('certArea').innerHTML = certificadoBloqueado(feitos);
+    return;
+  }
+
+  const respostas = state.sim.respostas;
+  const pontos = state.sim.pontuacao;
+  const maxParcial = feitos * MAX_EMAIL;
+  const pct = Math.round(pontos/maxParcial*100);
+  const acertosTipo = Object.values(respostas).filter(r=>r.correto).length;
+  const errosTipo = feitos - acertosTipo;
+
+  // desempenho por categoria
+  const cats = {normal:{t:0,ok:0}, phishing:{t:0,ok:0}, pretexting:{t:0,ok:0}};
+  EMAILS.forEach(m=>{ const r=respostas[m.id]; if(r){ cats[m.tipo].t++; if(r.correto) cats[m.tipo].ok++; } });
+
+  // sinais: acertos e omissões
+  const hits={}, miss={};
+  EMAILS.forEach(m=>{ const r=respostas[m.id]; if(!r) return;
+    m.sinais.forEach(s=>{ if(s==='nenhum') return;
+      if(r.sinais.includes(s)) hits[s]=(hits[s]||0)+1; else miss[s]=(miss[s]||0)+1; });
+  });
+  const topHits = Object.entries(hits).sort((a,b)=>b[1]-a[1]).slice(0,4).map(e=>SINAIS[e[0]]);
+  const topMiss = Object.entries(miss).sort((a,b)=>b[1]-a[1]).slice(0,4).map(e=>SINAIS[e[0]]);
+
+  const ring = anelPct(pct);
+  const catBar = (key,label,color)=>{
+    const c=cats[key], p=c.t?Math.round(c.ok/c.t*100):0;
+    return `<div class="cat-bar"><div class="cat-bar__top"><span>${label}</span><span>${c.ok}/${c.t} acertos · ${p}%</span></div>
+      <div class="cat-bar__track"><div class="cat-bar__fill" style="width:${p}%;background:${color}"></div></div></div>`;
+  };
+
+  let msgCls, msgTxt;
+  if(pct>=80){ msgCls='good'; msgTxt='Muito bom. Você lê as mensagens com atenção e percebe quando algo está fora do lugar. Mantenha o costume de conferir o remetente e o que está sendo pedido.'; }
+  else if(pct>=55){ msgCls='mid'; msgTxt='Bom resultado. O que mais escapa costuma ser a autoridade fingida e a pressa artificial — repare nesses dois quando ficar em dúvida.'; }
+  else { msgCls='low'; msgTxt='Você concluiu a atividade, mas vale firmar a leitura do endereço, dos links e dos pedidos incomuns. Revisitar o conceito e refazer a simulação ajuda bastante.'; }
+
+  const recos = gerarRecomendacoes(cats, topMiss, pct);
+  const incompleto = feitos<EMAILS.length;
+
+  box.innerHTML = `
+    <div class="result-hero">
+      ${incompleto?`<p style="color:var(--clay);font-size:.85rem;margin:0 0 6px">Você analisou ${feitos} de ${EMAILS.length} mensagens. Os números abaixo consideram o que já foi feito.</p>`:''}
+      <h2>Como você foi na simulação</h2>
+      <div class="score-ring">${ring}<div class="pct"><b>${pct}%</b><span>aproveitamento</span></div></div>
+      <p style="color:var(--muted);margin:0">${pontos} de ${maxParcial} pontos possíveis</p>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi"><b>${pontos}</b><span>pontos obtidos</span></div>
+      <div class="kpi"><b>${incompleto?maxParcial:MAX_TOTAL}</b><span>pontos possíveis</span></div>
+      <div class="kpi"><b style="color:var(--green)">${acertosTipo}</b><span>classificações certas</span></div>
+      <div class="kpi"><b style="color:var(--red)">${errosTipo}</b><span>classificações erradas</span></div>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <h3>Desempenho por tipo de mensagem</h3>
+      <div class="cat-bars">
+        ${catBar('normal','Normais','var(--green)')}
+        ${catBar('phishing','Phishing','var(--red)')}
+        ${catBar('pretexting','Pretexting','var(--amber)')}
+      </div>
+    </div>
+
+    <div class="grid grid-2" style="margin-top:18px">
+      <div class="card">
+        <h3>Sinais que você mais acertou</h3>
+        ${topHits.length?`<div class="chip-row">${topHits.map(s=>`<span class="chip">✓ ${s}</span>`).join('')}</div>`:'<p style="color:var(--muted)">Ainda não há sinais corretamente identificados.</p>'}
+      </div>
+      <div class="card">
+        <h3>Sinais que mais passaram batido</h3>
+        ${topMiss.length?`<div class="chip-row">${topMiss.map(s=>`<span class="chip amber">• ${s}</span>`).join('')}</div>`:'<p style="color:var(--muted)">Ótimo: você não deixou sinais importantes de fora.</p>'}
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <h3>Leitura geral</h3>
+      <div class="msg-box ${msgCls}">${msgTxt}</div>
+      <h3 style="margin-top:18px">O que levar daqui</h3>
+      <ul class="reco-list">${recos.map(r=>`<li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg><span>${r}</span></li>`).join('')}</ul>
+      <div class="btn-row">
+        <button class="btn" onclick="go('simulacao')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4h2M4 11v2"/><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Revisar respostas</button>
+        <button class="btn btn--danger" onclick="reiniciarSimResult()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Refazer simulação</button>
+        <button class="btn btn--primary" onclick="document.getElementById('certName').focus();document.querySelector('.cert-print-area').scrollIntoView({behavior:'smooth'})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4"/><path d="M5 4h14v6a7 7 0 0 1-14 0V4Z"/></svg>Emitir certificado</button>
+      </div>
+    </div>`;
+
+  document.getElementById('certName').value = state.nome || '';
+  document.getElementById('certArea').innerHTML = state.nome ? certificadoHTML(state.nome, pct, incompleto) : certificadoBloqueado(feitos);
+}
+
+function anelPct(pct){
+  const r=64, c=2*Math.PI*r, off=c*(1-pct/100);
+  return `<svg width="150" height="150" viewBox="0 0 150 150">
+    <circle cx="75" cy="75" r="${r}" fill="none" stroke="var(--line)" stroke-width="12"/>
+    <circle cx="75" cy="75" r="${r}" fill="none" stroke="var(--sage)" stroke-width="12" stroke-linecap="round"
+      stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 75 75)"/></svg>`;
+}
+
+function gerarRecomendacoes(cats, topMiss, pct){
+  const r=[];
+  const pior = Object.entries(cats).filter(([k,v])=>v.t>0).sort((a,b)=>(a[1].ok/a[1].t)-(b[1].ok/b[1].t))[0];
+  if(pior && pior[1].ok/pior[1].t < 0.7){
+    const nome={normal:'mensagens legítimas (cuidado para não tratar tudo como ameaça)',phishing:'phishing (olhe a pressa, o endereço e os links)',pretexting:'pretexting (desconfie de pedidos vindos de quem se diz "do suporte" ou de um conhecido por um canal novo)'};
+    r.push('Treine mais a leitura de '+nome[pior[0]]+'.');
+  }
+  if(topMiss.includes('Inconsistência no remetente')||topMiss.includes('Domínio ou endereço suspeito')) r.push('Confira sempre o endereço depois do @ e veja se ele realmente pertence ao serviço que diz representar.');
+  if(topMiss.includes('Pedido de código de verificação')||topMiss.includes('Pedido de senha')) r.push('Guarde isto: nenhum serviço de verdade pede sua senha ou o código do SMS por mensagem, e-mail ou telefone.');
+  if(topMiss.includes('Urgência artificial')) r.push('Prazo de minutos e ameaça de bloqueio são iscas para te apressar. Pare e confirme pelo aplicativo ou site oficial que você já usa.');
+  if(pct>=80) r.push('Quando reconhecer um golpe, vale apagar a mensagem e avisar quem ela imitava, pelo canal oficial — ajuda outras pessoas também.');
+  if(r.length<3) r.push('Na dúvida, não clique e não responda: procure o contato oficial por conta própria, em vez de usar o que chegou na mensagem.');
+  if(r.length<3) r.push('Releia o módulo conceitual para fixar a diferença entre phishing e pretexting.');
+  return r.slice(0,4);
+}
+
+function reiniciarSimResult(){
+  if(!confirm('Refazer a simulação apaga suas análises atuais. Continuar?')) return;
+  state.sim={respostas:{},pontuacao:0}; simSel=null; salvar();
+  renderSimList(); atualizarRibbon(); go('simulacao');
+}
+
+/* =====================================================================
+   CERTIFICADO
+   ===================================================================== */
+function certificadoBloqueado(feitos){
+  const msg = feitos===0
+    ? 'Conclua ao menos parte da simulação e informe seu nome para gerar o certificado.'
+    : 'Informe seu nome no campo acima e clique em "Gerar certificado".';
+  return `<div class="cert-locked">
+    <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px;opacity:.6"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+    <p style="margin:0">${msg}</p></div>`;
+}
+
+function certificadoHTML(nome, pct, incompleto){
+  const data = new Date().toLocaleDateString('pt-BR', {day:'2-digit', month:'long', year:'numeric'});
+  return `
+    <div class="certificate">
+      <div class="cert-top">
+        <span class="cert-seal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+        <span class="cert-org">Segunda Olhada · Segurança no dia a dia</span>
+      </div>
+      <div class="cert-title">Certificado de Conclusão</div>
+      <p class="cert-sub">Conferido a</p>
+      <div class="cert-name">${nome}</div>
+      <p class="cert-body">por concluir o percurso <b>Segunda Olhada: reconhecer phishing e pretexting em mensagens do dia a dia</b>, analisando mensagens reais do cotidiano e exercitando o olhar para identificar tentativas de golpe, com aproveitamento de <b>${pct}%</b> na simulação${incompleto?' (parcial)':''}.</p>
+      <div class="cert-foot">
+        <div class="sig-line"><div class="ln"><b>${data}</b>Data de emissão</div></div>
+        <div class="sig-line"><div class="ln"><b>Conteúdo educativo</b>Segunda Olhada</div></div>
+      </div>
+      <p class="cert-disclaimer">Certificado de caráter educativo, emitido para fins de aprendizado. Não possui validade institucional ou profissional.</p>
+    </div>
+    <div class="cert-actions btn-row" style="justify-content:center">
+      <button class="btn btn--navy" onclick="window.print()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Imprimir certificado</button>
+    </div>`;
+}
+
+function emitirCertificado(){
+  const nome = document.getElementById('certName').value.trim();
+  if(nome.length<3){ toast('Informe seu nome completo para emitir o certificado.'); return; }
+  if(analisados()===0){ toast('Analise ao menos uma mensagem antes de emitir o certificado.'); return; }
+  state.nome = nome; salvar();
+  const feitos = analisados(), maxParcial=feitos*MAX_EMAIL;
+  const pct = Math.round(state.sim.pontuacao/maxParcial*100);
+  document.getElementById('certArea').innerHTML = certificadoHTML(nome, pct, feitos<EMAILS.length);
+  document.getElementById('certArea').scrollIntoView({behavior:'smooth', block:'center'});
+  toast('Certificado gerado.');
+}
+
+/* =====================================================================
+   LIMPAR TUDO
+   ===================================================================== */
+function limparTudo(){
+  if(!confirm('Isso apaga seu nome, o resultado do quiz, todas as análises da simulação e a pontuação. Deseja recomeçar do zero?')) return;
+  try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+  state = defaultState(); simSel=null;
+  renderQuiz(); renderSimList(); atualizarRibbon();
+  document.getElementById('certName').value='';
+  document.getElementById('simRead').innerHTML =
+    `<div class="mail-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H4z"/><path d="M4 9h4l2 3h4l2-3h4"/></svg>Abra uma mensagem para começar a análise.</div>`;
+  go('inicio');
+  toast('Tudo foi reiniciado.');
+}
+
+/* =====================================================================
+   INICIALIZAÇÃO
+   ===================================================================== */
+function init(){
+  renderQuiz();
+  renderExemploList();
+  renderSimList();
+  atualizarRibbon();
+  if(state.nome) document.getElementById('certName').value = state.nome;
+}
+init();
+</script>
+</body>
+</html>
