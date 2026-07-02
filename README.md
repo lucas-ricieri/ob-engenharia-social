@@ -8,6 +8,12 @@ Objeto de aprendizagem voltado à capacitação de colaboradores corporativos pa
 - Lucas Ricieri Siquinelli Pereira
 - Marlus Zabla Lipsuk
 
+## SUMÁRIO
+
+- [Mapa Conceitual](#mapa-conceitual)
+- [Mapa Instrucional](#mapa-instrucional)
+- [GitHub Pages](https://lucas-ricieri.github.io/ob-engenharia-social/)
+
 ## Público-Alvo
 
 Este treinamento é destinado a **colaboradores de empresas de todos os níveis hierárquicos**, desde equipes operacionais até gestores, que utilizam e-mail corporativo em sua rotina de trabalho. Não é necessário conhecimento técnico prévio em segurança da informação; o conteúdo foi elaborado para ser acessível a qualquer profissional, independentemente de sua área de atuação.
@@ -46,3 +52,6 @@ Ao concluir este treinamento, o colaborador deverá ser capaz de:
 ## Mapa Instrucional
 ![Mapa Instrucional](mapa-instrucional.png "Mapa Instrucional")
 
+## Objeto de aprendizagem
+
+[clique aqui para acessar o OA](https://lucas-ricieri.github.io/ob-engenharia-social/)
