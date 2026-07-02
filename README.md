@@ -12,7 +12,7 @@ Objeto de aprendizagem voltado à capacitação de colaboradores corporativos pa
 
 - [Mapa Conceitual](#mapa-conceitual)
 - [Mapa Instrucional](#mapa-instrucional)
-- [GitHub Pages](https://lucas-ricieri.github.io/ob-engenharia-social/)
+- [Acessar OA](https://lucas-ricieri.github.io/ob-engenharia-social/)
 
 ## Público-Alvo
 
